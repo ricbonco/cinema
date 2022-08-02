@@ -1,7 +1,7 @@
 #! /bin/bash
 
 # Make sure no other instances of the system are running
-docker-compose down
+docker-compose down 
 # Remove database data to start the experiment from scratch
 rm postgres/data -rf
 rm postgres/security_db_data -rf
@@ -15,7 +15,7 @@ echo "Ricardo 2"
 # Call to movies_cinema service
 curl localhost:8081/movies_cinema
 # Shutting down all services
-docker-compose down.
+docker-compose down 
 
 # ./setup.sh
 # ./experiment1.sh
