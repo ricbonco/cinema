@@ -41,7 +41,6 @@ def authenticate(clientId, clientSecret):
         if cur.rowcount == 1:
             for row in rows:
                 isAdmin = row[3]
-                print("Ricardo isAdmin " + str(isAdmin), flush=True)
                 payload = authPayload(row[0],row[1], isAdmin)
                 break
 
@@ -68,7 +67,6 @@ def authenticate(clientId, clientSecret):
 def verify(token):
     try:
         isBlacklisted = checkBlacklist(token)
-        print("Ricardo isBlacklisted " + str(isBlacklisted), flush=True)
         if isBlacklisted == True:
              return {"success": False}
         else:
@@ -83,7 +81,6 @@ def create(clientId, clientSecret, isAdmin):
     conn = None
     query = "insert into public.clients (\"ClientId\", \"ClientSecret\", \"IsAdmin\") values(%s,%s,%s)"
     try:
-        print("Ricardo client 1", flush=True)
         conn = psycopg2.connect("host='security_postgres' dbname=" + DBNAME + " user=" + DBUSER +" password=" +DBPASSWORD)
         cur = conn.cursor()
         cur.execute(query, (clientId ,clientSecret,isAdmin))
@@ -129,11 +126,8 @@ def checkBlacklist(token):
     try:
         conn = psycopg2.connect("host='security_postgres' dbname=" + DBNAME + " user=" + DBUSER +" password=" +DBPASSWORD) 
         cur = conn.cursor()
-        print("Ricardo query ", flush=True)
         cur.execute(query)
-        print("Ricardo query after", flush=True)
         result = cur.fetchone()
-        print("Ricardo result[0] " + str(result[0]), flush=True)
         if result[0] == 1:
             return True
         else:

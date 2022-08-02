@@ -47,19 +47,14 @@ def client():
         # verify the token 
         authorizationHeader = request.headers.get('authorization')	
         token = authorizationHeader.replace("Bearer ","")
-        print("Ricardo token " + token, flush=True)
         verification = authModel.verify(token)
-        print("Ricardo is admin " + str(verification.get("isAdmin")), flush=True)
 
 
         if verification.get("isAdmin") == True:
             # get the client_id and secret from the client application
             client_id = request.form.get("client_id")
-            print("Ricardo client id " + client_id, flush=True)
             client_secret_input = request.form.get("client_secret")
-            print("Ricardo secret " + client_secret_input, flush=True)
             is_admin = request.form.get("is_admin")
-            print("Ricardo is_admin " + is_admin, flush=True)
 
             # the client secret in the database is "hashed" with a one-way hash
             hash_object = hashlib.sha1(bytes(client_secret_input, 'utf-8'))
