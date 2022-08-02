@@ -1,0 +1,171 @@
+version: '3'  # version of compose format 
+
+services:
+  security-service:
+    restart: always
+    build: ./security  # path is relative to docker-compose.yml localtion
+    volumes:
+      - ./security:/usr/src/app # mount point
+    env_file:
+      - ./security/.env
+    #ports:
+    #  - 5001:80  # host:container
+    depends_on:
+     - gateway
+     - postgres
+     - security_postgres
+    expose:
+      - "5001" 
+
+  movies-service:
+    restart: always
+    build: ./movies  # path is relative to docker-compose.yml localtion
+    volumes:
+      - ./movies:/usr/src/app # mount point
+    #ports:
+    #  - 5002:80  # host:container
+    depends_on:
+     - gateway
+     - postgres
+     - security_postgres
+    expose:
+      - "5002" 
+
+  cinema_catalog-service:
+    restart: always
+    build: ./cinema_catalog  # path is relative to docker-compose.yml localtion
+    volumes:
+      - ./cinema_catalog:/usr/src/app # mount point
+    # This enables entry point without gateway
+    #ports:
+    #  - 5003:80  # host:container
+    depends_on:
+     - gateway
+     - postgres
+     - security_postgres
+    # Need to check if this can be commented out   
+    expose:
+      - "5003"
+
+  bookings-service:
+    restart: always
+    build: ./bookings  # path is relative to docker-compose.yml localtion
+    volumes:
+      - ./bookings:/usr/src/app # mount point
+    # This enables entry point without gateway
+    #ports:
+    #  - 5003:80  # host:container
+    depends_on:
+     - gateway
+     - postgres
+     - security_postgres
+    # Need to check if this can be commented out   
+    expose:
+      - "5004"
+
+  payments-service:
+    restart: always
+    build: ./payments  # path is relative to docker-compose.yml localtion
+    volumes:
+      - ./payments:/usr/src/app # mount point
+    # This enables entry point without gateway
+    #ports:
+    #  - 5003:80  # host:container
+    depends_on:
+     - gateway
+     - postgres
+     - security_postgres
+    # Need to check if this can be commented out   
+    expose:
+      - "5005"
+
+  notifications-service:
+    restart: always
+    build: ./notifications  # path is relative to docker-compose.yml localtion
+    volumes:
+      - ./notifications:/usr/src/app # mount point
+    # This enables entry point without gateway
+    #ports:
+    #  - 5003:80  # host:container
+    depends_on:
+     - gateway
+     - postgres
+     - security_postgres
+    # Need to check if this can be commented out   
+    expose:
+      - "5006"
+
+  reports-service:
+    restart: always
+    build: ./reports  # path is relative to docker-compose.yml localtion
+    volumes:
+      - ./reports:/usr/src/app # mount point
+    # This enables entry point without gateway
+    #ports:
+    #  - 5003:80  # host:container
+    depends_on:
+     - gateway
+     - postgres
+     - security_postgres
+    # Need to check if this can be commented out   
+    expose:
+      - "5007"
+
+  # Define the postgres database
+  postgres:
+    restart: always
+    # Use the postgres alpine image: https://hub.docker.com/_/postgres/
+    image: postgres:alpine
+
+    # Mount an initialization script and the persistent postgresql data volume
+    volumes:
+      - ./postgres/data:/var/lib/postgresql/data
+#      - ./postgres/create_clients_table.sql:/docker-entrypoint-initdb.d/create_clients_table.sql
+#      - ./postgres/create_blacklist_table.sql:/docker-entrypoint-initdb.d/create_blacklist_table.sql
+#      - ./postgres/create_database.sql:/docker-entrypoint-initdb.d/create_database.sql
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+    # Pass postgres environment variables
+    environment:
+      POSTGRES_PASSWORD: cinema123
+      POSTGRES_DB: cinema
+ 
+    # Expose port 5432 to other Docker containers
+    expose:
+      - "5432"
+  
+  # Define the postgres database
+  security_postgres:
+    restart: always
+    # Use the postgres alpine image: https://hub.docker.com/_/postgres/
+    image: postgres:alpine
+
+    # Mount an initialization script and the persistent postgresql data volume
+    volumes:
+      - ./postgres/security_db_data:/var/lib/postgresql/data
+      - ./postgres/create_database.sql:/docker-entrypoint-initdb.d/create_database.sql
+#      - ./postgres/create_clients_table.sql:/docker-entrypoint-initdb.d/create_clients_table.sql
+#      - ./postgres/create_blacklist_table.sql:/docker-entrypoint-initdb.d/create_blacklist_table.sql
+#      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+    # Pass postgres environment variables
+    environment:
+      POSTGRES_PASSWORD: mypassword
+      POSTGRES_DB: auth_user
+ 
+    # Expose port 5432 to other Docker containers
+    expose:
+      - "5433"
+
+  # Define the redis NGINX forward proxy container
+  gateway:
+    build: ./gateway
+    ports:
+        - 8080:8080
+        - 8081:8081
+        - 8082:8082
+        - 8083:8083
+        - 8084:8084
+        - 8085:8085
+        - 8086:8086
+    restart: always
