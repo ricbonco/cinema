@@ -14,10 +14,24 @@ api = Api(app)
 @app.route('/movies')
 def get_movies():
     conn = psycopg2.connect("host='postgres' dbname='cinema' user='postgres' password='cinema123'")
-    cur = conn.cursor()
-    dbquery = cur.execute("SELECT * FROM movies")
-    result = cur.fetchall()
-    return jsonify(result)
+    try:
+        cur = conn.cursor()
+        dbquery = cur.execute("SELECT * FROM movies")
+        result = cur.fetchall()
+        return jsonify({'movies': result})
+        
+    except (Exception, psycopg2.DatabaseError) as error:
+        print(error, flush=True)
+        if conn is not None:
+            cur.close()
+            conn.close()
+
+        return jsonify({'success': False})
+    finally:
+        if conn is not None:
+            cur.close()
+            conn.close()
+    
 
 # Run the application
 if __name__ == '__main__':
