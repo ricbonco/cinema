@@ -13,7 +13,7 @@ SET default_tablespace = '';
 SET default_with_oids = false;
 
 /*CREATE TABLE movies (
-    movie_id SERIAL PRIMARY KEY, 
+    id_movie SERIAL PRIMARY KEY, 
     movie_name VARCHAR NOT NULL
 );*/
 
@@ -67,24 +67,24 @@ SELECT * FROM "venues";
 /* Venues where a movie is exhibited */
 CREATE TABLE "movies_venues" (
   "id" SERIAL PRIMARY KEY,
-  "movie_id" int,
-  "venue_id" int
+  "id_movie" int,
+  "id_venue" int
 );
 
-ALTER TABLE "movies_venues" ADD FOREIGN KEY ("movie_id") REFERENCES "movies" ("id");
+ALTER TABLE "movies_venues" ADD FOREIGN KEY ("id_movie") REFERENCES "movies" ("id");
 
-ALTER TABLE "movies_venues" ADD FOREIGN KEY ("venue_id") REFERENCES "venues" ("id");
+ALTER TABLE "movies_venues" ADD FOREIGN KEY ("id_venue") REFERENCES "venues" ("id");
 
-INSERT INTO "movies_venues" ("venue_id", "movie_id") 
+INSERT INTO "movies_venues" ("id_venue", "id_movie") 
 SELECT v.id, m.id FROM "venues" AS v
 CROSS JOIN "movies" AS m
 WHERE MOD(v.id, m.id) != 0;
 
 SELECT * FROM "movies_venues" AS mv
 INNER JOIN "movies" AS m
-ON m.id = mv.movie_id
+ON m.id = mv.id_movie
 INNER JOIN "venues" AS v
-ON v.id = mv.venue_id;
+ON v.id = mv.id_venue;
 
 /* Available times for a movie on a specific theater */
 CREATE TABLE "movies_times" (
@@ -140,15 +140,15 @@ ON c.id = cv.id_catalog_name;
 INSERT INTO "movies_times" ("id_movies_venues", "movie_date") 
 SELECT mv.id, NOW() + m.runtime_minutes * interval '1 minutes' FROM "movies_venues" AS mv 
 INNER JOIN "movies" as m
-ON m.id = mv.movie_id
+ON m.id = mv.id_movie
 UNION
-SELECT mv.id, NOW() + 2 * m.runtime_minutes * interval '1 minutes' FROM "movies_venues" AS mv 
+SELECT mv.id, NOW() + 2.5 * m.runtime_minutes * interval '1 minutes' FROM "movies_venues" AS mv 
 INNER JOIN "movies" as m
-ON m.id = mv.movie_id
+ON m.id = mv.id_movie
 UNION
-SELECT mv.id, NOW() + 3 * m.runtime_minutes * interval '1 minutes' FROM "movies_venues" AS mv 
+SELECT mv.id, NOW() + 3.5 * m.runtime_minutes * interval '1 minutes' FROM "movies_venues" AS mv 
 INNER JOIN "movies" as m
-ON m.id = mv.movie_id;
+ON m.id = mv.id_movie;
 
 SELECT * FROM "movies_times" ORDER BY id_movies_venues;
 
@@ -168,18 +168,19 @@ SELECT mt.id, 15, 15,
          ON c.id = cv.id_catalog_name 
          AND c.catalog_name = 'SEAT_TYPE' 
          AND cv.catalog_value = 'VIP'),
-      3750
+      7000
 FROM "movies_times" AS mt;
 
-SELECT CONCAT(v.name, ' ', v.location) as venue, m.title, mt.movie_date, ms.total_seats, ms.available_seats, cv.catalog_value, ms.price FROM "movies_seats" as ms
+SELECT CONCAT(v.name, ' ', v.location) as venue, m.title, mt.movie_date, ms.total_seats, ms.available_seats, cv.catalog_value as ticket_type, ms.price 
+FROM "movies_seats" as ms
 INNER JOIN "movies_times" as mt
   ON mt.id = ms.id_movies_times
 INNER JOIN "movies_venues" as mv
   ON mv.id = mt.id_movies_venues
 INNER JOIN "movies" as m 
-  ON m.id = mv.movie_id
+  ON m.id = mv.id_movie
 INNER JOIN "venues" as v
-  ON v.id = mv.venue_id
+  ON v.id = mv.id_venue
 INNER JOIN "catalogs_values" as cv
   ON cv.id = ms.id_seat_type
 
