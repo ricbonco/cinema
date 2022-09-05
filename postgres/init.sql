@@ -12,12 +12,7 @@ SET search_path = public, pg_catalog;
 SET default_tablespace = '';
 SET default_with_oids = false;
 
-/*CREATE TABLE movies (
-    id_movie SERIAL PRIMARY KEY, 
-    movie_name VARCHAR NOT NULL
-);*/
-
-CREATE TABLE "movies" (
+CREATE TABLE "movie" (
   "id" SERIAL PRIMARY KEY,
   "title" varchar,
   "year" int,
@@ -26,8 +21,8 @@ CREATE TABLE "movies" (
   "genres" varchar
 );
 
-ALTER TABLE "movies" OWNER TO postgres;
-INSERT INTO "movies" ("title", "year", "director", "runtime_minutes", "genres") 
+ALTER TABLE "movie" OWNER TO postgres;
+INSERT INTO "movie" ("title", "year", "director", "runtime_minutes", "genres") 
 VALUES
     ('Inception', 2010, 'Christopher Nolan', 148, 'Action, Adventure, Sci-fi'), 
     ('Tenet', 2020, 'Christopher Nolan', 150, 'Action, Sci-fi, Thriller'),
@@ -40,16 +35,16 @@ VALUES
     ('Forrest Gump', 1994, 'Robert Zemeckis', 142, 'Drama, Romance'),
     ('Fight Club', 1999, 'David Fincher', 139, 'Drama');
 
-SELECT * FROM "movies";
+SELECT * FROM "movie";
 
-CREATE TABLE "venues" (
+CREATE TABLE "venue" (
   "id" SERIAL PRIMARY KEY,
   "name" varchar,
   "location" varchar
 );
 
-ALTER TABLE "venues" OWNER TO postgres;
-INSERT INTO "venues" ("name", "location") 
+ALTER TABLE "venue" OWNER TO postgres;
+INSERT INTO "venue" ("name", "location") 
 VALUES
     ('Cinemark', 'Multiplaza Curridabat'), 
     ('Cinemark', 'Multiplaza Escazu'), 
@@ -62,41 +57,41 @@ VALUES
     ('Cinepolis', 'Terramall'), 
     ('Cinepolis', 'Terrazas Lindora');
 
-SELECT * FROM "venues";
+SELECT * FROM "venue";
 
 /* Venues where a movie is exhibited */
-CREATE TABLE "movies_venues" (
+CREATE TABLE "movie_venue" (
   "id" SERIAL PRIMARY KEY,
   "id_movie" int,
   "id_venue" int
 );
 
-ALTER TABLE "movies_venues" ADD FOREIGN KEY ("id_movie") REFERENCES "movies" ("id");
+ALTER TABLE "movie_venue" ADD FOREIGN KEY ("id_movie") REFERENCES "movie" ("id");
 
-ALTER TABLE "movies_venues" ADD FOREIGN KEY ("id_venue") REFERENCES "venues" ("id");
+ALTER TABLE "movie_venue" ADD FOREIGN KEY ("id_venue") REFERENCES "venue" ("id");
 
-INSERT INTO "movies_venues" ("id_venue", "id_movie") 
-SELECT v.id, m.id FROM "venues" AS v
-CROSS JOIN "movies" AS m
+INSERT INTO "movie_venue" ("id_venue", "id_movie") 
+SELECT v.id, m.id FROM "venue" AS v
+CROSS JOIN "movie" AS m
 WHERE MOD(v.id, m.id) != 0;
 
-SELECT * FROM "movies_venues" AS mv
-INNER JOIN "movies" AS m
+SELECT * FROM "movie_venue" AS mv
+INNER JOIN "movie" AS m
 ON m.id = mv.id_movie
-INNER JOIN "venues" AS v
+INNER JOIN "venue" AS v
 ON v.id = mv.id_venue;
 
 /* Available times for a movie on a specific theater */
-CREATE TABLE "movies_times" (
+CREATE TABLE "movie_time" (
   "id" SERIAL PRIMARY KEY,
-  "id_movies_venues" int,
+  "id_movie_venue" int,
   "movie_date" timestamp
 );
 
 /* Available seats for a function and seat type */
-CREATE TABLE "movies_seats" (
+CREATE TABLE "movie_seat" (
   "id" SERIAL PRIMARY KEY,
-  "id_movies_times" int,
+  "id_movie_time" int,
   "total_seats" int,
   "available_seats" int,
   "id_seat_type" int,
@@ -104,83 +99,83 @@ CREATE TABLE "movies_seats" (
 );
 
 /* Types of catalogs */
-CREATE TABLE "catalogs" (
+CREATE TABLE "catalog" (
   "id" SERIAL PRIMARY KEY,
-  "catalog_name" varchar
+  "name" varchar
 );
 
 /* Values for a specific catalog */
-CREATE TABLE "catalogs_values" (
+CREATE TABLE "catalog_value" (
   "id" SERIAL PRIMARY KEY,
   "id_catalog_name" int,
-  "catalog_value" varchar
+  "value" varchar
 );
 
-ALTER TABLE "movies_times" ADD FOREIGN KEY ("id_movies_venues") REFERENCES "movies_venues" ("id");
+ALTER TABLE "movie_time" ADD FOREIGN KEY ("id_movie_venue") REFERENCES "movie_venue" ("id");
 
-ALTER TABLE "catalogs_values" ADD FOREIGN KEY ("id_catalog_name") REFERENCES "catalogs" ("id");
+ALTER TABLE "catalog_value" ADD FOREIGN KEY ("id_catalog_name") REFERENCES "catalog" ("id");
 
-ALTER TABLE "movies_seats" ADD FOREIGN KEY ("id_seat_type") REFERENCES "catalogs_values" ("id");
+ALTER TABLE "movie_seat" ADD FOREIGN KEY ("id_seat_type") REFERENCES "catalog_value" ("id");
 
-ALTER TABLE "movies_seats" ADD FOREIGN KEY ("id_movies_times") REFERENCES "movies_times" ("id");
+ALTER TABLE "movie_seat" ADD FOREIGN KEY ("id_movie_time") REFERENCES "movie_time" ("id");
 
-INSERT INTO "catalogs" ("catalog_name") 
+INSERT INTO "catalog" ("name") 
 VALUES
     ('SEAT_TYPE');
 
-INSERT INTO "catalogs_values" ("id_catalog_name", "catalog_value") 
-SELECT id, 'Regular' FROM "catalogs" WHERE catalog_name = 'SEAT_TYPE'
+INSERT INTO "catalog_value" ("id_catalog_name", "value") 
+SELECT id, 'Regular' FROM "catalog" WHERE "name" = 'SEAT_TYPE'
 UNION
-SELECT id, 'VIP' FROM "catalogs" WHERE catalog_name = 'SEAT_TYPE';
+SELECT id, 'VIP' FROM "catalog" WHERE "name" = 'SEAT_TYPE';
 
-SELECT c.catalog_name, cv.catalog_value FROM "catalogs_values" AS cv
-INNER JOIN "catalogs" AS c
+SELECT c.name, cv.value FROM "catalog_value" AS cv
+INNER JOIN "catalog" AS c
 ON c.id = cv.id_catalog_name;
 
-INSERT INTO "movies_times" ("id_movies_venues", "movie_date") 
-SELECT mv.id, NOW() + m.runtime_minutes * interval '1 minutes' FROM "movies_venues" AS mv 
-INNER JOIN "movies" as m
+INSERT INTO "movie_time" ("id_movie_venue", "movie_date") 
+SELECT mv.id, NOW() + m.runtime_minutes * interval '1 minutes' FROM "movie_venue" AS mv 
+INNER JOIN "movie" as m
 ON m.id = mv.id_movie
 UNION
-SELECT mv.id, NOW() + 2.5 * m.runtime_minutes * interval '1 minutes' FROM "movies_venues" AS mv 
-INNER JOIN "movies" as m
+SELECT mv.id, NOW() + 2.5 * m.runtime_minutes * interval '1 minutes' FROM "movie_venue" AS mv 
+INNER JOIN "movie" as m
 ON m.id = mv.id_movie
 UNION
-SELECT mv.id, NOW() + 3.5 * m.runtime_minutes * interval '1 minutes' FROM "movies_venues" AS mv 
-INNER JOIN "movies" as m
+SELECT mv.id, NOW() + 3.5 * m.runtime_minutes * interval '1 minutes' FROM "movie_venue" AS mv 
+INNER JOIN "movie" as m
 ON m.id = mv.id_movie;
 
-SELECT * FROM "movies_times" ORDER BY id_movies_venues;
+SELECT * FROM "movie_time" ORDER BY id_movie_venue;
 
-INSERT INTO "movies_seats" ("id_movies_times", "total_seats", "available_seats", "id_seat_type", "price")
+INSERT INTO "movie_seat" ("id_movie_time", "total_seats", "available_seats", "id_seat_type", "price")
 SELECT mt.id, 50, 50, 
-      (SELECT cv.id FROM "catalogs" as c 
-       INNER JOIN "catalogs_values" as cv 
+      (SELECT cv.id FROM "catalog" as c 
+       INNER JOIN "catalog_value" as cv 
          ON c.id = cv.id_catalog_name 
-         AND c.catalog_name = 'SEAT_TYPE' 
-         AND cv.catalog_value = 'Regular'),
+         AND c.name = 'SEAT_TYPE' 
+         AND cv.value = 'Regular'),
       3750
-FROM "movies_times" AS mt
+FROM "movie_time" AS mt
 UNION
 SELECT mt.id, 15, 15, 
-      (SELECT cv.id FROM "catalogs" as c 
-       INNER JOIN "catalogs_values" as cv 
+      (SELECT cv.id FROM "catalog" as c 
+       INNER JOIN "catalog_value" as cv 
          ON c.id = cv.id_catalog_name 
-         AND c.catalog_name = 'SEAT_TYPE' 
-         AND cv.catalog_value = 'VIP'),
+         AND c.name = 'SEAT_TYPE' 
+         AND cv.value = 'VIP'),
       7000
-FROM "movies_times" AS mt;
+FROM "movie_time" AS mt;
 
-SELECT CONCAT(v.name, ' ', v.location) as venue, m.title, mt.movie_date, ms.total_seats, ms.available_seats, cv.catalog_value as ticket_type, ms.price 
-FROM "movies_seats" as ms
-INNER JOIN "movies_times" as mt
-  ON mt.id = ms.id_movies_times
-INNER JOIN "movies_venues" as mv
-  ON mv.id = mt.id_movies_venues
-INNER JOIN "movies" as m 
+SELECT CONCAT(v.name, ' ', v.location) as venue, m.title, mt.movie_date, ms.total_seats, ms.available_seats, cv.value as ticket_type, ms.price 
+FROM "movie_seat" as ms
+INNER JOIN "movie_time" as mt
+  ON mt.id = ms.id_movie_time
+INNER JOIN "movie_venue" as mv
+  ON mv.id = mt.id_movie_venue
+INNER JOIN "movie" as m 
   ON m.id = mv.id_movie
-INNER JOIN "venues" as v
+INNER JOIN "venue" as v
   ON v.id = mv.id_venue
-INNER JOIN "catalogs_values" as cv
+INNER JOIN "catalog_value" as cv
   ON cv.id = ms.id_seat_type
 

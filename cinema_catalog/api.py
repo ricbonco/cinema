@@ -16,7 +16,7 @@ def get_venues():
     try:
         cur = conn.cursor()
         
-        query = "SELECT v.id as id_venue, v.name, v.location FROM venues AS v"
+        query = "SELECT v.id as id_venue, v.name, v.location FROM venue AS v"
 
         dbquery = cur.execute(query)
         row_headers=[x[0] for x in cur.description] 
@@ -48,11 +48,11 @@ def get_movies_per_cinema():
         cur = conn.cursor()
 
         query = f"""SELECT mv.id as id_movie_venue, m.id as id_movie, m.title, v.id as id_venue, CONCAT(v.name, ' ', v.location) as venue_name
-                    FROM movies_venues AS mv
-                    INNER JOIN venues AS v
+                    FROM movie_venue AS mv
+                    INNER JOIN venue AS v
                     ON v.id = mv.id_venue
                     AND mv.id_venue = {id_venue}
-                    INNER JOIN movies AS m
+                    INNER JOIN movie AS m
                     ON m.id = mv.id_movie""" 
 
         dbquery = cur.execute(query)
@@ -79,19 +79,19 @@ def get_movies_per_cinema():
 
 @app.route('/movie_times_cinema', methods=["POST"])
 def get_movie_times_per_cinema():
-    id_movies_venue = request.form.get("id_movies_venue")
+    id_movie_venue = request.form.get("id_movie_venue")
     conn = psycopg2.connect("host='postgres' dbname='cinema' user='postgres' password='cinema123'")
     try:
         cur = conn.cursor()
 
         query = f"""SELECT mt.id as id_movies_times, m.title, CONCAT(v.name, ' ', v.location) as venue, mt.movie_date
-                   FROM movies_times as mt
-                   INNER JOIN movies_venues as mv
-                     ON mv.id = mt.id_movies_venues
-                      AND mt.id_movies_venues = {id_movies_venue}
-                   INNER JOIN venues AS v
+                   FROM movie_time as mt
+                   INNER JOIN movie_venue as mv
+                     ON mv.id = mt.id_movie_venue
+                      AND mt.id_movie_venue = {id_movie_venue}
+                   INNER JOIN venue AS v
                     ON v.id = mv.id_venue
-                   INNER JOIN movies AS m
+                   INNER JOIN movie AS m
                     ON m.id = mv.id_movie"""
 
         dbquery = cur.execute(query)
@@ -118,23 +118,23 @@ def get_movie_times_per_cinema():
 
 @app.route('/movie_seats_venue_times', methods=["POST"])
 def get_movie_seats_per_venue_and_times():
-    id_movies_times = request.form.get("id_movies_times")
+    id_movie_time = request.form.get("id_movie_time")
     conn = psycopg2.connect("host='postgres' dbname='cinema' user='postgres' password='cinema123'")
     try:
         cur = conn.cursor()
 
-        query = f"""SELECT ms.id as id_movies_seats, ms.id_seat_type, m.title, CONCAT(v.name, ' ', v.location) as venue, ms.total_seats, ms.available_seats, ms.price::numeric::float, cv.catalog_value as ticket_type 
-                   FROM movies_seats as ms
-                   INNER JOIN movies_times as mt
-                     ON mt.id = ms.id_movies_times
-                       AND ms.id_movies_times = {id_movies_times}
-                   INNER JOIN catalogs_values as cv
+        query = f"""SELECT ms.id as id_movie_seat, ms.id_seat_type, m.title, CONCAT(v.name, ' ', v.location) as venue, ms.total_seats, ms.available_seats, ms.price::numeric::float, cv.value as ticket_type 
+                   FROM movie_seat as ms
+                   INNER JOIN movie_time as mt
+                     ON mt.id = ms.id_movie_time
+                       AND ms.id_movie_time = {id_movie_time}
+                   INNER JOIN catalog_value as cv
                     ON cv.id = ms.id_seat_type
-                   INNER JOIN movies_venues as mv
-                     ON mv.id = mt.id_movies_venues
-                   INNER JOIN venues AS v
+                   INNER JOIN movie_venue as mv
+                     ON mv.id = mt.id_movie_venue
+                   INNER JOIN venue AS v
                     ON v.id = mv.id_venue
-                   INNER JOIN movies AS m
+                   INNER JOIN movie AS m
                     ON m.id = mv.id_movie"""
 
         dbquery = cur.execute(query)

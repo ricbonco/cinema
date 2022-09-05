@@ -17,7 +17,7 @@ def get_movies():
     try:
         cur = conn.cursor()
         
-        query = "SELECT m.id, m.title, m.year, m.director, m.runtime_minutes, m.genres FROM movies AS m"
+        query = "SELECT m.id, m.title, m.year, m.director, m.runtime_minutes, m.genres FROM movie AS m"
         
         dbquery = cur.execute(query)
         row_headers=[x[0] for x in cur.description] 

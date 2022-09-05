@@ -21,12 +21,12 @@ def get_movies():
 
 @app.route('/reserve_seats', methods=["POST"])
 def post_reserve_seats():
-    id_movies_times = request.form.get("id_movies_times")
+    id_movie_time = request.form.get("id_movie_time")
     id_seat_type = request.form.get("id_seat_type")
     requested_seats = int(request.form.get("requested_seats"))
     
     available_seats = -1
-    id_movies_seats = -1
+    id_movie_seat = -1
     ticket_type = ""
 
     conn = psycopg2.connect("host='postgres' dbname='cinema' user='postgres' password='cinema123'")
@@ -34,30 +34,28 @@ def post_reserve_seats():
         
         cur = conn.cursor()
         url = "http://cinema_catalog-service/movie_seats_venue_times"
-        body = {'id_movies_times': id_movies_times}
+        body = {'id_movie_time': id_movie_time}
         r = requests.post(url, data = body)
 
         if r.status_code != 200:
             return jsonify({'success': False, 'details': f'Error while contacting cinema catalog service. Status code: {r.status_code}'})
 
         data = json.loads(r.text)
-        print("Ricardo data " + str(data), flush=True)
         seats = data["movie_seats_venue_times"]
         for seat_group in seats:
             if seat_group["id_seat_type"] is int(id_seat_type):
                 available_seats = seat_group["available_seats"]
-                id_movies_seats = seat_group["id_movies_seats"]
+                id_movie_seat = seat_group["id_movie_seat"]
                 ticket_type = seat_group["ticket_type"]
 
-        print("Ricardo available_seats " + str(available_seats), flush=True)
 
         if available_seats is -1:
             return jsonify({'success': False, 'details': 'Error while reserving requested seats.'})
         if available_seats < requested_seats:
             return jsonify({'success': False, 'details': 'Requested seat number is not available.'})
 
-        query = f"""UPDATE movies_seats SET available_seats = {available_seats - requested_seats} 
-                   WHERE id = {id_movies_seats}"""
+        query = f"""UPDATE movie_seat SET available_seats = {available_seats - requested_seats} 
+                   WHERE id = {id_movie_seat}"""
 
         print("query " + str(query), flush=True)
 
