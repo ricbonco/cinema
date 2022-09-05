@@ -16,9 +16,17 @@ def get_movies():
     conn = psycopg2.connect("host='postgres' dbname='cinema' user='postgres' password='cinema123'")
     try:
         cur = conn.cursor()
-        dbquery = cur.execute("SELECT * FROM movies")
+        
+        query = "SELECT m.id, m.title, m.year, m.director, m.runtime_minutes, m.genres FROM movies AS m"
+        
+        dbquery = cur.execute(query)
+        row_headers=[x[0] for x in cur.description] 
         result = cur.fetchall()
-        return jsonify({'movies': result})
+        json_data=[]
+        for r in result:
+            json_data.append(dict(zip(row_headers,r)))
+        print(jsonify(json_data), flush=True)  
+        return jsonify({'movies': json_data})
         
     except (Exception, psycopg2.DatabaseError) as error:
         print(error, flush=True)
