@@ -11,16 +11,8 @@ app.config['JSONIFY_PRETTYPRINT_REGULAR'] = False
 api = Api(app)
 
 # Create routes
-@app.route('/bookings')
-def get_movies():
-    conn = psycopg2.connect("host='postgres' dbname='cinema' user='postgres' password='cinema123'")
-    cur = conn.cursor()
-    dbquery = cur.execute("SELECT * FROM movies")
-    result = cur.fetchall()
-    return jsonify(result)
-
-@app.route('/reserve_seats', methods=["POST"])
-def post_reserve_seats():
+@app.route('/book', methods=["POST"])
+def post_book_seats():
     id_movie_time = request.form.get("id_movie_time")
     id_seat_type = request.form.get("id_seat_type")
     requested_seats = int(request.form.get("requested_seats"))
@@ -63,11 +55,28 @@ def post_reserve_seats():
 
         updated_rows = cur.rowcount
 
+        if updated_rows is 0:
+            conn.rollback()
+            return jsonify({'success': False, 'details': 'Error while booking requested seats.'})
+
+        query = f"""INSERT INTO "booking" ("id_movie_seat", "id_user", "reserved_seats", "time") 
+                    VALUES
+                    ('{id_movie_seat}', NULL, {requested_seats}, NOW())
+                    returning id"""
+
+        print("query " + str(query), flush=True)
+
+        dbquery = cur.execute(query)
+        id_booking = cur.fetchone()[0]
+
+        updated_rows = cur.rowcount
+
         if updated_rows is 1:
             conn.commit()
-            return jsonify({'reserved_seats': requested_seats, 'ticket_type': ticket_type})
+            
+            return jsonify({'id_booking': id_booking, 'booked_seats': requested_seats, 'ticket_type': ticket_type})
         else:  
-            return jsonify({'success': False, 'details': 'Error while reserving requested seats.'})
+            return jsonify({'success': False, 'details': 'Error while booking requested seats.'})
         
     except (Exception, psycopg2.DatabaseError) as error:
         

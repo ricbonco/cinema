@@ -177,5 +177,24 @@ INNER JOIN "movie" as m
 INNER JOIN "venue" as v
   ON v.id = mv.id_venue
 INNER JOIN "catalog_value" as cv
-  ON cv.id = ms.id_seat_type
+  ON cv.id = ms.id_seat_type;
 
+CREATE TABLE "booking" (
+  "id" SERIAL PRIMARY KEY,
+  "id_movie_seat" int,
+  "id_user" int,
+  "reserved_seats" int,
+  "time" timestamp
+);
+
+ALTER TABLE "booking" ADD FOREIGN KEY ("id_movie_seat") REFERENCES "movie_seat" ("id");
+
+CREATE TABLE "payment" (
+  "id" SERIAL PRIMARY KEY,
+  "id_booking" int,
+  "approved" boolean,
+  "last_digits" int,
+  "time" timestamp
+);
+
+ALTER TABLE "payment" ADD FOREIGN KEY ("id_booking") REFERENCES "booking" ("id");
