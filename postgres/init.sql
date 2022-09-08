@@ -198,3 +198,12 @@ CREATE TABLE "payment" (
 );
 
 ALTER TABLE "payment" ADD FOREIGN KEY ("id_booking") REFERENCES "booking" ("id");
+
+CREATE TABLE "notification" (
+  "id" SERIAL PRIMARY KEY,
+  "sender" varchar,
+  "recipient" varchar,
+  "subject" varchar,
+  "body" varchar,
+  "time" timestamp
+);
