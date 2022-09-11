@@ -4,6 +4,7 @@
 from operator import mod
 from flask import Flask, request, jsonify
 from flask_restful import Resource, Api
+from datetime import date
 import requests, psycopg2, json, random
 
 # Instantiate the app
@@ -77,7 +78,7 @@ def make_payment():
 
         query = f"""INSERT INTO "payment" ("id_booking", "approved", "last_digits", "time") 
                     VALUES
-                    ('{id_booking}', {payment_approved}, {card_number[-3:]}, NOW())
+                    ('{id_booking}', {payment_approved}, {card_number[-4:]}, NOW())
                     returning id"""
 
         dbquery = cur.execute(query)
@@ -88,9 +89,31 @@ def make_payment():
         if updated_rows is 1:
             conn.commit()
             
+            url = "http://notifications-service/notify"
+
             if payment_approved:
+                body = {'email_address': 'cinemacatalogproject@gmail.com', 
+                        'subject' : f'Your order {id_payment} has been processed!',
+                        'body' : 
+                        f"""Your order {id_payment} has been processed succesfully at {date.today()}!
+                        Amount: {payment_amount}"""}
+                r = requests.post(url, data = body)
+
+                # TODO: Error handling for notification errors
+                #if r.status_code != 200:
+                #    return jsonify({'success': False, 'details': f'Error while contacting cinema catalog service. Status code: {r.status_code}'})
+
                 return jsonify({'payment': {'approved' : True, 'id_payment' : id_payment, 'amount' : payment_amount}})
             else:
+                body = {'email_address': 'cinemacatalogproject@gmail.com', 
+                        'subject' : f'Error when processing your order!',
+                        'body' : 
+                        f"""Your payment of {payment_amount} was declined by your card issuer. Please try again."""}
+                r = requests.post(url, data = body)
+
+                # TODO: Error handling for notification errors
+                #if r.status_code != 200:
+                #    return jsonify({'success': False, 'details': f'Error while contacting cinema catalog service. Status code: {r.status_code}'})
                 return jsonify({'payment': {'approved' : False, 'amount' : payment_amount}})
         else:  
             return jsonify({'success': False, 'details': 'Unable to register payment.'})
@@ -109,7 +132,8 @@ def make_payment():
 
 def make_payment(card_number, expiration_date, card_verification_value, amount):
     # Simulate VPOS payments with pseudo random nummbers
-    return mod(random.randint(0, 8), 8) is not 0
+    #return mod(random.randint(0, 8), 8) is not 0
+    return mod(random.randint(0, 2), 2) is not 0
 
 # Run the application
 if __name__ == '__main__':
