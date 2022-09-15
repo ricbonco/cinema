@@ -1,4 +1,4 @@
-# Movies Service
+# Payments Service
 
 # Import framework
 from operator import mod
@@ -15,11 +15,25 @@ api = Api(app)
 # Create routes
 @app.route('/subtotal')
 def get_subtotal():
+    authorizationHeader = request.headers.get('authorization')	
     id_booking = request.form.get("id_booking")
     conn = psycopg2.connect("host='postgres' dbname='cinema' user='postgres' password='cinema123'")
     try:
         cur = conn.cursor()
-        
+
+        header = {'Authorization': f'{authorizationHeader}'}
+
+        url = "http://security-service/verify"
+        r = requests.post(url, headers = header)
+
+        if r.status_code != 200:
+            return jsonify({'success': False, 'details': f'Error while contacting security service. Status code: {r.status_code}'})
+
+        data = json.loads(r.text)
+
+        if not "clientId" in data:
+            return jsonify({'success': False, 'details': f'Unauthorized to use this service.'}), 401
+
         query = f"""SELECT b.id AS id_booking, b.reserved_seats * ms.price::numeric::float AS subtotal
                     FROM booking AS b
                     INNER JOIN movie_seat AS ms
@@ -49,6 +63,7 @@ def get_subtotal():
 
 @app.route('/pay', methods=["POST"])
 def make_payment():
+    authorizationHeader = request.headers.get('authorization')
     id_booking = request.form.get("id_booking")
     card_number = request.form.get("card_number")
     expiration_date = request.form.get("expiration_date")
@@ -56,8 +71,34 @@ def make_payment():
     conn = psycopg2.connect("host='postgres' dbname='cinema' user='postgres' password='cinema123'")
     
     try:
-        # TODO: Validate if payment already done before doing it
         cur = conn.cursor()
+
+        header = {'Authorization': f'{authorizationHeader}'}
+
+        url = "http://security-service/verify"
+        r = requests.post(url, headers = header)
+
+        if r.status_code != 200:
+            return jsonify({'success': False, 'details': f'Error while contacting security service. Status code: {r.status_code}'})
+
+        data = json.loads(r.text)
+
+        if not "clientId" in data:
+            return jsonify({'success': False, 'details': f'Unauthorized to use this service.'}), 401
+
+        username = data["clientId"]
+
+        query = f"""SELECT p.id AS id_payment
+                    FROM payment AS p
+                    WHERE p.id_booking = {id_booking} 
+                       AND p.approved = true"""
+        
+        dbquery = cur.execute(query)
+        row_headers=[x[0] for x in cur.description] 
+        result = cur.fetchall()
+        
+        if len(result) == 1:
+            return jsonify({'success': False, 'details': f'Payment already processed.'})
 
         query = f"""SELECT b.id AS id_booking, b.reserved_seats * ms.price::numeric::float AS payment_amount
                     FROM booking AS b
@@ -76,9 +117,9 @@ def make_payment():
 
         payment_approved = make_payment(card_number, expiration_date, card_verification_value, payment_amount)
 
-        query = f"""INSERT INTO "payment" ("id_booking", "approved", "last_digits", "time") 
+        query = f"""INSERT INTO "payment" ("id_booking", "approved", "last_digits", "time", "username") 
                     VALUES
-                    ('{id_booking}', {payment_approved}, {card_number[-4:]}, NOW())
+                    ('{id_booking}', {payment_approved}, {card_number[-4:]}, NOW(), '{username}')
                     returning id"""
 
         dbquery = cur.execute(query)
@@ -97,11 +138,10 @@ def make_payment():
                         'body' : 
                         f"""Your order {id_payment} has been processed succesfully at {date.today()}!
                         Amount: {payment_amount}"""}
-                r = requests.post(url, data = body)
+                r = requests.post(url, data = body, headers = header)
 
-                # TODO: Error handling for notification errors
-                #if r.status_code != 200:
-                #    return jsonify({'success': False, 'details': f'Error while contacting cinema catalog service. Status code: {r.status_code}'})
+                if r.status_code != 200:
+                    return jsonify({'success': False, 'details': f'Error while contacting notification service. Status code: {r.status_code}'})
 
                 return jsonify({'payment': {'approved' : True, 'id_payment' : id_payment, 'amount' : payment_amount}})
             else:
@@ -109,11 +149,11 @@ def make_payment():
                         'subject' : f'Error when processing your order!',
                         'body' : 
                         f"""Your payment of {payment_amount} was declined by your card issuer. Please try again."""}
-                r = requests.post(url, data = body)
+                r = requests.post(url, data = body, headers = header)
 
-                # TODO: Error handling for notification errors
-                #if r.status_code != 200:
-                #    return jsonify({'success': False, 'details': f'Error while contacting cinema catalog service. Status code: {r.status_code}'})
+                if r.status_code != 200:
+                    return jsonify({'success': False, 'details': f'Error while contacting notification service. Status code: {r.status_code}'})
+
                 return jsonify({'payment': {'approved' : False, 'amount' : payment_amount}})
         else:  
             return jsonify({'success': False, 'details': 'Unable to register payment.'})

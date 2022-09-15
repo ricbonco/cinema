@@ -1,9 +1,9 @@
-# Movies Service
+# Notifications Service
 
 # Import framework
 from flask import Flask, request, jsonify
 from flask_restful import Resource, Api
-import requests, psycopg2, smtplib
+import requests, psycopg2, smtplib, json
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
@@ -15,6 +15,7 @@ api = Api(app)
 # Create routes
 @app.route('/notify', methods=["POST"])
 def get_movies():
+    authorizationHeader = request.headers.get('authorization')
     email_address = request.form.get("email_address")
     subject = request.form.get("subject")
     body = request.form.get("body")
@@ -25,11 +26,26 @@ def get_movies():
         
         cur = conn.cursor()
 
+        header = {'Authorization': f'{authorizationHeader}'}
+
+        url = "http://security-service/verify"
+        r = requests.post(url, headers = header)
+
+        if r.status_code != 200:
+            return jsonify({'success': False, 'details': f'Error while contacting security service. Status code: {r.status_code}'})
+
+        data = json.loads(r.text)
+
+        if not "clientId" in data:
+            return jsonify({'success': False, 'details': f'Unauthorized to use this service.'}), 401
+
+        username = data["clientId"]
+
         send_email(sender, email_address, subject, body)
 
-        query = f"""INSERT INTO "notification" ("sender", "recipient", "subject", "body", "time") 
+        query = f"""INSERT INTO "notification" ("sender", "recipient", "subject", "body", "time", "username") 
                     VALUES
-                    ('{sender}', '{email_address}', '{subject}', '{body}', NOW())
+                    ('{sender}', '{email_address}', '{subject}', '{body}', NOW(), '{username}')
                     returning id"""
 
         dbquery = cur.execute(query)

@@ -28,7 +28,10 @@ CREATE TABLE public.clients
 
 \c authdb_dev auth_user
 
-INSERT INTO public.clients ("ClientId", "ClientSecret", "IsAdmin") values('ricardo', '8e7915f5a99b2f9cbf494d1fd3c7a8952114279d', TRUE);
+INSERT INTO public.clients ("ClientId", "ClientSecret", "IsAdmin") 
+VALUES 
+  ('sysadmin', '274644223f33149c4cb8fc2e30a7cc6e59622809', TRUE),
+  ('ricardo', '8e7915f5a99b2f9cbf494d1fd3c7a8952114279d', TRUE);
 
 SELECT * FROM public.clients;
 

@@ -1,4 +1,4 @@
-# Movies Service
+# Bookings Service
 
 # Import framework
 from flask import Flask, request, jsonify
@@ -13,6 +13,7 @@ api = Api(app)
 # Create routes
 @app.route('/book', methods=["POST"])
 def post_book_seats():
+    authorizationHeader = request.headers.get('authorization')	
     id_movie_time = request.form.get("id_movie_time")
     id_seat_type = request.form.get("id_seat_type")
     requested_seats = int(request.form.get("requested_seats"))
@@ -23,11 +24,26 @@ def post_book_seats():
 
     conn = psycopg2.connect("host='postgres' dbname='cinema' user='postgres' password='cinema123'")
     try:
-        
         cur = conn.cursor()
+
+        header = {'Authorization': f'{authorizationHeader}'}
+
+        url = "http://security-service/verify"
+        r = requests.post(url, headers = header)
+
+        if r.status_code != 200:
+            return jsonify({'success': False, 'details': f'Error while contacting security service. Status code: {r.status_code}'})
+
+        data = json.loads(r.text)
+
+        if not "clientId" in data:
+            return jsonify({'success': False, 'details': f'Unauthorized to use this service.'}), 401
+
+        username = data["clientId"]
+
         url = "http://cinema_catalog-service/movie_seats_venue_times"
         body = {'id_movie_time': id_movie_time}
-        r = requests.post(url, data = body)
+        r = requests.post(url, data = body, headers = header)
 
         if r.status_code != 200:
             return jsonify({'success': False, 'details': f'Error while contacting cinema catalog service. Status code: {r.status_code}'})
@@ -59,9 +75,9 @@ def post_book_seats():
             conn.rollback()
             return jsonify({'success': False, 'details': 'Error while booking requested seats.'})
 
-        query = f"""INSERT INTO "booking" ("id_movie_seat", "id_user", "reserved_seats", "time") 
+        query = f"""INSERT INTO "booking" ("id_movie_seat", "reserved_seats", "time", "username") 
                     VALUES
-                    ('{id_movie_seat}', NULL, {requested_seats}, NOW())
+                    ('{id_movie_seat}', {requested_seats}, NOW(), '{username}')
                     returning id"""
 
         print("query " + str(query), flush=True)
