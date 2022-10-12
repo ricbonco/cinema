@@ -4,7 +4,7 @@ import os
 
 class authPayload(dict):
 
-    def __init__(self, id, clientId, isAdmin):
+    def __init__(self, id, clientId, isAdmin, isEmployee):
         
         EXPIRESSECONDS = int(os.getenv('EXPIRESSECONDS'))
         
@@ -15,6 +15,8 @@ class authPayload(dict):
         self.clientId = clientId
         
         self.isAdmin = isAdmin
+
+        self.isEmployee = isEmployee
         
         # set the expiry attrbute to 30 minutes
         self.exp = datetime.utcnow() + timedelta(seconds=EXPIRESSECONDS)

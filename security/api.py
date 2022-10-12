@@ -55,13 +55,14 @@ def client():
             client_id = request.form.get("client_id")
             client_secret_input = request.form.get("client_secret")
             is_admin = request.form.get("is_admin")
+            is_employee = request.form.get("is_employee")
 
             # the client secret in the database is "hashed" with a one-way hash
             hash_object = hashlib.sha1(bytes(client_secret_input, 'utf-8'))
             hashed_client_secret = hash_object.hexdigest()
 
             # make a call to the model to authenticate
-            createResponse = authModel.create(client_id, hashed_client_secret, is_admin)
+            createResponse = authModel.create(client_id, hashed_client_secret, is_admin, is_employee)
             return jsonify({'success': createResponse})
         else:
             return jsonify({'success': False, 'message': 'Access Denied'})

@@ -10,6 +10,7 @@ CREATE TABLE public.clients
     "ClientId" character varying(128) COLLATE pg_catalog."default" NOT NULL,
     "ClientSecret" character varying(256) COLLATE pg_catalog."default" NOT NULL,
     "IsAdmin" boolean NOT NULL,
+    "IsEmployee" boolean NOT NULL,
     CONSTRAINT clients_pkey PRIMARY KEY ("Id")
 )
 

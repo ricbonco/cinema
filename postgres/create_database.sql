@@ -23,15 +23,16 @@ CREATE TABLE public.clients
     "ClientId" character varying(128) COLLATE pg_catalog."default" NOT NULL,
     "ClientSecret" character varying(256) COLLATE pg_catalog."default" NOT NULL,
     "IsAdmin" boolean NOT NULL,
+    "IsEmployee" boolean NOT NULL,
     CONSTRAINT clients_pkey PRIMARY KEY ("Id")
 );
 
 \c authdb_dev auth_user
 
-INSERT INTO public.clients ("ClientId", "ClientSecret", "IsAdmin") 
+INSERT INTO public.clients ("ClientId", "ClientSecret", "IsAdmin", "IsEmployee") 
 VALUES 
-  ('sysadmin', '274644223f33149c4cb8fc2e30a7cc6e59622809', TRUE),
-  ('ricardo', '8e7915f5a99b2f9cbf494d1fd3c7a8952114279d', TRUE);
+  ('sysadmin', '274644223f33149c4cb8fc2e30a7cc6e59622809', TRUE, TRUE),
+  ('ricardo', '8e7915f5a99b2f9cbf494d1fd3c7a8952114279d', TRUE, TRUE);
 
 SELECT * FROM public.clients;
 

@@ -33,6 +33,7 @@ def authenticate(clientId, clientSecret):
         cur.execute(query)
         rows = cur.fetchall()
         isAdmin = False
+        isEmployee = False
 
         print(rows, flush=True)
 
@@ -41,11 +42,12 @@ def authenticate(clientId, clientSecret):
         if cur.rowcount == 1:
             for row in rows:
                 isAdmin = row[3]
-                payload = authPayload(row[0],row[1], isAdmin)
+                isEmployee = row[4]
+                payload = authPayload(row[0],row[1], isAdmin, isEmployee)
                 break
 
             encoded_jwt = jwt.encode(payload.__dict__, AUTHSECRET, algorithm='HS256')
-            response = authResponse(encoded_jwt,EXPIRESSECONDS, isAdmin)
+            response = authResponse(encoded_jwt,EXPIRESSECONDS, isAdmin, isEmployee)
             
             return response.__dict__
         else:
@@ -76,14 +78,14 @@ def verify(token):
         print(error, flush=True)
         return {"success": False}
 
-def create(clientId, clientSecret, isAdmin):
+def create(clientId, clientSecret, isAdmin, isEmployee):
     
     conn = None
-    query = "insert into public.clients (\"ClientId\", \"ClientSecret\", \"IsAdmin\") values(%s,%s,%s)"
+    query = "insert into public.clients (\"ClientId\", \"ClientSecret\", \"IsAdmin\", \"IsEmployee\") values(%s,%s,%s,%s)"
     try:
         conn = psycopg2.connect("host='security_postgres' dbname=" + DBNAME + " user=" + DBUSER +" password=" +DBPASSWORD)
         cur = conn.cursor()
-        cur.execute(query, (clientId ,clientSecret,isAdmin))
+        cur.execute(query, (clientId, clientSecret, isAdmin, isEmployee))
         conn.commit()
         return True
     except (Exception, psycopg2.DatabaseError) as error:
