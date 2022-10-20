@@ -5,34 +5,52 @@ from operator import mod
 from flask import Flask, request, jsonify
 from flask_restful import Resource, Api
 from datetime import date
-import requests, psycopg2, json, random
+import requests, psycopg2, json, random, os
+from security import *
 
 # Instantiate the app
 app = Flask(__name__)
 app.config['JSONIFY_PRETTYPRINT_REGULAR'] = False
 api = Api(app)
 
+security_mode = os.getenv('SECURITYMODE')
+
 # Create routes
 @app.route('/subtotal')
 def get_subtotal():
-    authorizationHeader = request.headers.get('authorization')	
     id_booking = request.form.get("id_booking")
     conn = psycopg2.connect("host='postgres' dbname='cinema' user='postgres' password='cinema123'")
     try:
         cur = conn.cursor()
 
-        header = {'Authorization': f'{authorizationHeader}'}
+        if security_mode == 'Decentralized':
 
-        url = "http://security-service/verify"
-        r = requests.post(url, headers = header)
+            client_id = request.form.get("client_id")
+            client_secret = request.form.get("client_secret")
 
-        if r.status_code != 200:
-            return jsonify({'success': False, 'details': f'Error while contacting security service. Status code: {r.status_code}'})
+            auth = authenticate(client_id, client_secret)
 
-        data = json.loads(r.text)
+            if not auth:
+                return jsonify({'success': False, 'details': f'Unauthorized to use this service.'}), 401
+            else:
+                isAdmin = auth['isAdmin']
+                isEmployee = auth['isEmployee']
+            
+        else:        
+            authorizationHeader = request.headers.get('authorization')	
 
-        if not "clientId" in data:
-            return jsonify({'success': False, 'details': f'Unauthorized to use this service.'}), 401
+            header = {'Authorization': f'{authorizationHeader}'}
+
+            url = "http://security-service/verify"
+            r = requests.post(url, headers = header)
+
+            if r.status_code != 200:
+                return jsonify({'success': False, 'details': f'Error while contacting security service. Status code: {r.status_code}'})
+
+            data = json.loads(r.text)
+
+            if not "clientId" in data:
+                return jsonify({'success': False, 'details': f'Unauthorized to use this service.'}), 401
 
         query = f"""SELECT b.id AS id_booking, b.reserved_seats * ms.price::numeric::float AS subtotal
                     FROM booking AS b
@@ -63,7 +81,6 @@ def get_subtotal():
 
 @app.route('/pay', methods=["POST"])
 def make_payment():
-    authorizationHeader = request.headers.get('authorization')
     id_booking = request.form.get("id_booking")
     card_number = request.form.get("card_number")
     expiration_date = request.form.get("expiration_date")
@@ -73,20 +90,36 @@ def make_payment():
     try:
         cur = conn.cursor()
 
-        header = {'Authorization': f'{authorizationHeader}'}
+        if security_mode == 'Decentralized':
 
-        url = "http://security-service/verify"
-        r = requests.post(url, headers = header)
+            client_id = request.form.get("client_id")
+            client_secret = request.form.get("client_secret")
 
-        if r.status_code != 200:
-            return jsonify({'success': False, 'details': f'Error while contacting security service. Status code: {r.status_code}'})
+            auth = authenticate(client_id, client_secret)
 
-        data = json.loads(r.text)
+            if not auth:
+                return jsonify({'success': False, 'details': f'Unauthorized to use this service.'}), 401
+            else:
+                isAdmin = auth['isAdmin']
+                isEmployee = auth['isEmployee']
+            
+        else:        
+            authorizationHeader = request.headers.get('authorization')	
 
-        if not "clientId" in data:
-            return jsonify({'success': False, 'details': f'Unauthorized to use this service.'}), 401
+            header = {'Authorization': f'{authorizationHeader}'}
 
-        username = data["clientId"]
+            url = "http://security-service/verify"
+            r = requests.post(url, headers = header)
+
+            if r.status_code != 200:
+                return jsonify({'success': False, 'details': f'Error while contacting security service. Status code: {r.status_code}'})
+
+            data = json.loads(r.text)
+
+            if not "clientId" in data:
+                return jsonify({'success': False, 'details': f'Unauthorized to use this service.'}), 401
+
+        username = data["clientId"] if security_mode == 'Centralized' else client_id
 
         query = f"""SELECT p.id AS id_payment
                     FROM payment AS p
@@ -138,7 +171,7 @@ def make_payment():
                         'body' : 
                         f"""Your order {id_payment} has been processed succesfully at {date.today()}!
                         Amount: {payment_amount}"""}
-                r = requests.post(url, data = body, headers = header)
+                r = requests.post(url, data = body, headers = header) if security_mode == 'Centralized' else requests.post(url, data = body)
 
                 if r.status_code != 200:
                     return jsonify({'success': False, 'details': f'Error while contacting notification service. Status code: {r.status_code}'})
@@ -149,7 +182,7 @@ def make_payment():
                         'subject' : f'Error when processing your order!',
                         'body' : 
                         f"""Your payment of {payment_amount} was declined by your card issuer. Please try again."""}
-                r = requests.post(url, data = body, headers = header)
+                r = requests.post(url, data = body, headers = header) if security_mode == 'Centralized' else requests.post(url, data = body)
 
                 if r.status_code != 200:
                     return jsonify({'success': False, 'details': f'Error while contacting notification service. Status code: {r.status_code}'})

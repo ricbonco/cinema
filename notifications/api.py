@@ -3,19 +3,21 @@
 # Import framework
 from flask import Flask, request, jsonify
 from flask_restful import Resource, Api
-import requests, psycopg2, smtplib, json
+import requests, psycopg2, smtplib, json, os
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from security import *
 
 # Instantiate the app
 app = Flask(__name__)
 app.config['JSONIFY_PRETTYPRINT_REGULAR'] = False
 api = Api(app)
 
+security_mode = os.getenv('SECURITYMODE')
+
 # Create routes
 @app.route('/notify', methods=["POST"])
 def get_movies():
-    authorizationHeader = request.headers.get('authorization')
     email_address = request.form.get("email_address")
     subject = request.form.get("subject")
     body = request.form.get("body")
@@ -26,22 +28,38 @@ def get_movies():
         
         cur = conn.cursor()
 
-        header = {'Authorization': f'{authorizationHeader}'}
+        if security_mode == 'Decentralized':
 
-        url = "http://security-service/verify"
-        r = requests.post(url, headers = header)
+            client_id = request.form.get("client_id")
+            client_secret = request.form.get("client_secret")
 
-        if r.status_code != 200:
-            return jsonify({'success': False, 'details': f'Error while contacting security service. Status code: {r.status_code}'})
+            auth = authenticate(client_id, client_secret)
 
-        data = json.loads(r.text)
+            if not auth:
+                return jsonify({'success': False, 'details': f'Unauthorized to use this service.'}), 401
+            else:
+                isAdmin = auth['isAdmin']
+                isEmployee = auth['isEmployee']
+            
+        else:        
+            authorizationHeader = request.headers.get('authorization')	
 
-        if not "clientId" in data:
-            return jsonify({'success': False, 'details': f'Unauthorized to use this service.'}), 401
+            header = {'Authorization': f'{authorizationHeader}'}
 
-        username = data["clientId"]
+            url = "http://security-service/verify"
+            r = requests.post(url, headers = header)
 
-        send_email(sender, email_address, subject, body)
+            if r.status_code != 200:
+                return jsonify({'success': False, 'details': f'Error while contacting security service. Status code: {r.status_code}'})
+
+            data = json.loads(r.text)
+
+            if not "clientId" in data:
+                return jsonify({'success': False, 'details': f'Unauthorized to use this service.'}), 401
+
+        username = data["clientId"] if security_mode == 'Centralized' else client_id
+
+        #send_email(sender, email_address, subject, body)
 
         query = f"""INSERT INTO "notification" ("sender", "recipient", "subject", "body", "time", "username") 
                     VALUES

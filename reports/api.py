@@ -3,33 +3,51 @@
 # Import framework
 from flask import Flask, request, jsonify
 from flask_restful import Resource, Api
-import requests, psycopg2, json
+import requests, psycopg2, json, os
+from security import *
 
 # Instantiate the app
 app = Flask(__name__)
 app.config['JSONIFY_PRETTYPRINT_REGULAR'] = False
 api = Api(app)
 
+security_mode = os.getenv('SECURITYMODE')
+
 # Create routes
 @app.route('/payments')
 def get_payments():
-    authorizationHeader = request.headers.get('authorization')	
     conn = psycopg2.connect("host='postgres' dbname='cinema' user='postgres' password='cinema123'")
     try:
         cur = conn.cursor()
 
-        header = {'Authorization': f'{authorizationHeader}'}
+        if security_mode == 'Decentralized':
 
-        url = "http://security-service/verify"
-        r = requests.post(url, headers = header)
+            client_id = request.form.get("client_id")
+            client_secret = request.form.get("client_secret")
 
-        if r.status_code != 200:
-            return jsonify({'success': False, 'details': f'Error while contacting security service. Status code: {r.status_code}'})
+            auth = authenticate(client_id, client_secret)
 
-        data = json.loads(r.text)
+            if not auth:
+                return jsonify({'success': False, 'details': f'Unauthorized to use this service.'}), 401
+            else:
+                isAdmin = auth['isAdmin']
+                isEmployee = auth['isEmployee']
+            
+        else:        
+            authorizationHeader = request.headers.get('authorization')	
 
-        if not "clientId" in data:
-            return jsonify({'success': False, 'details': f'Unauthorized to use this service.'}), 401
+            header = {'Authorization': f'{authorizationHeader}'}
+
+            url = "http://security-service/verify"
+            r = requests.post(url, headers = header)
+
+            if r.status_code != 200:
+                return jsonify({'success': False, 'details': f'Error while contacting security service. Status code: {r.status_code}'})
+
+            data = json.loads(r.text)
+
+            if not "clientId" in data:
+                return jsonify({'success': False, 'details': f'Unauthorized to use this service.'}), 401
 
         query = """SELECT p.id AS id_payments, p.id_booking, p.approved, p.last_digits, p.time, p.username
                    FROM payment AS p"""
@@ -57,23 +75,38 @@ def get_payments():
 
 @app.route('/notifications')
 def get_notifications():
-    authorizationHeader = request.headers.get('authorization')	
     conn = psycopg2.connect("host='postgres' dbname='cinema' user='postgres' password='cinema123'")
     try:
         cur = conn.cursor()
 
-        header = {'Authorization': f'{authorizationHeader}'}
+        if security_mode == 'Decentralized':
 
-        url = "http://security-service/verify"
-        r = requests.post(url, headers = header)
+            client_id = request.form.get("client_id")
+            client_secret = request.form.get("client_secret")
 
-        if r.status_code != 200:
-            return jsonify({'success': False, 'details': f'Error while contacting security service. Status code: {r.status_code}'})
+            auth = authenticate(client_id, client_secret)
 
-        data = json.loads(r.text)
+            if not auth:
+                return jsonify({'success': False, 'details': f'Unauthorized to use this service.'}), 401
+            else:
+                isAdmin = auth['isAdmin']
+                isEmployee = auth['isEmployee']
+            
+        else:        
+            authorizationHeader = request.headers.get('authorization')	
 
-        if not "clientId" in data:
-            return jsonify({'success': False, 'details': f'Unauthorized to use this service.'}), 401
+            header = {'Authorization': f'{authorizationHeader}'}
+
+            url = "http://security-service/verify"
+            r = requests.post(url, headers = header)
+
+            if r.status_code != 200:
+                return jsonify({'success': False, 'details': f'Error while contacting security service. Status code: {r.status_code}'})
+
+            data = json.loads(r.text)
+
+            if not "clientId" in data:
+                return jsonify({'success': False, 'details': f'Unauthorized to use this service.'}), 401
 
         query = """SELECT n.id AS id_notification, n.sender, n.recipient, n.subject, n.body, n.time, n.username
                    FROM notification AS n"""

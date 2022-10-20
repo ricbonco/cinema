@@ -7,7 +7,7 @@ services:
     volumes:
       - ./security:/usr/src/app # mount point
     env_file:
-      - ./security/.env
+      - .env
     #ports:
     #  - 5001:80  # host:container
     depends_on:
@@ -22,6 +22,8 @@ services:
     build: ./movies  # path is relative to docker-compose.yml localtion
     volumes:
       - ./movies:/usr/src/app # mount point
+    env_file:
+      - .env
     #ports:
     #  - 5002:80  # host:container
     depends_on:
@@ -36,6 +38,8 @@ services:
     build: ./cinema_catalog  # path is relative to docker-compose.yml localtion
     volumes:
       - ./cinema_catalog:/usr/src/app # mount point
+    env_file:
+      - .env
     # This enables entry point without gateway
     #ports:
     #  - 5003:80  # host:container
@@ -52,6 +56,8 @@ services:
     build: ./bookings  # path is relative to docker-compose.yml localtion
     volumes:
       - ./bookings:/usr/src/app # mount point
+    env_file:
+      - .env
     # This enables entry point without gateway
     #ports:
     #  - 5003:80  # host:container
@@ -68,6 +74,8 @@ services:
     build: ./payments  # path is relative to docker-compose.yml localtion
     volumes:
       - ./payments:/usr/src/app # mount point
+    env_file:
+      - .env
     # This enables entry point without gateway
     #ports:
     #  - 5003:80  # host:container
@@ -84,6 +92,8 @@ services:
     build: ./notifications  # path is relative to docker-compose.yml localtion
     volumes:
       - ./notifications:/usr/src/app # mount point
+    env_file:
+      - .env
     # This enables entry point without gateway
     #ports:
     #  - 5003:80  # host:container
@@ -100,6 +110,8 @@ services:
     build: ./reports  # path is relative to docker-compose.yml localtion
     volumes:
       - ./reports:/usr/src/app # mount point
+    env_file:
+      - .env
     # This enables entry point without gateway
     #ports:
     #  - 5003:80  # host:container
