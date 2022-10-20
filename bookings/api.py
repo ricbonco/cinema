@@ -60,7 +60,7 @@ def post_book_seats():
         username = data["clientId"] if security_mode == 'Centralized' else client_id
 
         url = "http://cinema_catalog-service/movie_seats_venue_times"
-        body = {'client_id' : client_id, 'client_secret' : client_secret, 'id_movie_time': id_movie_time}
+        body = {'id_movie_time': id_movie_time} if security_mode == 'Centralized' else {'client_id' : client_id, 'client_secret' : client_secret, 'id_movie_time': id_movie_time}
         r = requests.post(url, data = body, headers = header) if security_mode == 'Centralized' else requests.post(url, data = body)
 
         if r.status_code != 200:
