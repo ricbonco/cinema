@@ -3,17 +3,19 @@
 # Import framework
 from flask import Flask, request, jsonify
 from flask_restful import Resource, Api
-import requests, psycopg2, json
+import requests, psycopg2, json, os
+from security import *
 
 # Instantiate the app
 app = Flask(__name__)
 app.config['JSONIFY_PRETTYPRINT_REGULAR'] = False
 api = Api(app)
 
+security_mode = os.getenv('SECURITYMODE')
+
 # Create routes
 @app.route('/book', methods=["POST"])
 def post_book_seats():
-    authorizationHeader = request.headers.get('authorization')	
     id_movie_time = request.form.get("id_movie_time")
     id_seat_type = request.form.get("id_seat_type")
     requested_seats = int(request.form.get("requested_seats"))
@@ -26,24 +28,40 @@ def post_book_seats():
     try:
         cur = conn.cursor()
 
-        header = {'Authorization': f'{authorizationHeader}'}
+        if security_mode == 'Decentralized':
 
-        url = "http://security-service/verify"
-        r = requests.post(url, headers = header)
+            client_id = request.form.get("client_id")
+            client_secret = request.form.get("client_secret")
 
-        if r.status_code != 200:
-            return jsonify({'success': False, 'details': f'Error while contacting security service. Status code: {r.status_code}'})
+            auth = authenticate(client_id, client_secret)
 
-        data = json.loads(r.text)
+            if not auth:
+                return jsonify({'success': False, 'details': f'Unauthorized to use this service.'}), 401
+            else:
+                isAdmin = auth['isAdmin']
+                isEmployee = auth['isEmployee']
+            
+        else:        
+            authorizationHeader = request.headers.get('authorization')	
 
-        if not "clientId" in data:
-            return jsonify({'success': False, 'details': f'Unauthorized to use this service.'}), 401
+            header = {'Authorization': f'{authorizationHeader}'}
 
-        username = data["clientId"]
+            url = "http://security-service/verify"
+            r = requests.post(url, headers = header)
+
+            if r.status_code != 200:
+                return jsonify({'success': False, 'details': f'Error while contacting security service. Status code: {r.status_code}'})
+
+            data = json.loads(r.text)
+
+            if not "clientId" in data:
+                return jsonify({'success': False, 'details': f'Unauthorized to use this service.'}), 401
+
+        username = data["clientId"] if security_mode == 'Centralized' else client_id
 
         url = "http://cinema_catalog-service/movie_seats_venue_times"
-        body = {'id_movie_time': id_movie_time}
-        r = requests.post(url, data = body, headers = header)
+        body = {'client_id' : client_id, 'client_secret' : client_secret, 'id_movie_time': id_movie_time}
+        r = requests.post(url, data = body, headers = header) if security_mode == 'Centralized' else requests.post(url, data = body)
 
         if r.status_code != 200:
             return jsonify({'success': False, 'details': f'Error while contacting cinema catalog service. Status code: {r.status_code}'})
