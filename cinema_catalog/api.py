@@ -3,8 +3,9 @@
 # Import framework
 from flask import Flask, request, jsonify
 from flask_restful import Resource, Api
-import requests, psycopg2, json, os
+import requests, psycopg2, json, os, psutil
 from security import *
+from datetime import datetime
 
 # Instantiate the app
 app = Flask(__name__)
@@ -12,13 +13,16 @@ app.config['JSONIFY_PRETTYPRINT_REGULAR'] = False
 api = Api(app)
 
 security_mode = os.getenv('SECURITYMODE')
+telemetry = os.getenv('TELEMETRY') == 'On'
 
 @app.route('/venues')
 def get_venues():
+    get_telemetry('venues_start')
     conn = psycopg2.connect("host='postgres' dbname='cinema' user='postgres' password='cinema123'")
     try:
         cur = conn.cursor()
 
+        get_telemetry('venues_security_start')
         if security_mode == 'Decentralized':
 
             client_id = request.form.get("client_id")
@@ -47,6 +51,7 @@ def get_venues():
 
             if not "clientId" in data:
                 return jsonify({'success': False, 'details': f'Unauthorized to use this service.'}), 401
+        get_telemetry('venues_security_end')
         
         query = "SELECT v.id as id_venue, v.name, v.location FROM venue AS v"
 
@@ -71,14 +76,17 @@ def get_venues():
         if conn is not None:
             cur.close()
             conn.close()
+        get_telemetry('venues_end')
 
 @app.route('/movies_cinema', methods=["POST"])
 def get_movies_per_cinema():
+    get_telemetry('movies_cinema_start')
     id_venue = request.form.get("id_venue")
     conn = psycopg2.connect("host='postgres' dbname='cinema' user='postgres' password='cinema123'")
     try:
         cur = conn.cursor()
 
+        get_telemetry('movies_cinema_security_start')
         if security_mode == 'Decentralized':
 
             client_id = request.form.get("client_id")
@@ -107,6 +115,7 @@ def get_movies_per_cinema():
 
             if not "clientId" in data:
                 return jsonify({'success': False, 'details': f'Unauthorized to use this service.'}), 401
+        get_telemetry('movies_cinema_security_end')
 
         query = f"""SELECT mv.id as id_movie_venue, m.id as id_movie, m.title, v.id as id_venue, CONCAT(v.name, ' ', v.location) as venue_name
                     FROM movie_venue AS mv
@@ -137,14 +146,17 @@ def get_movies_per_cinema():
         if conn is not None:
             cur.close()
             conn.close()
+        get_telemetry('movies_cinema_end')
 
 @app.route('/movie_times_cinema', methods=["POST"])
 def get_movie_times_per_cinema():
+    get_telemetry('movie_times_cinema_start')
     id_movie_venue = request.form.get("id_movie_venue")
     conn = psycopg2.connect("host='postgres' dbname='cinema' user='postgres' password='cinema123'")
     try:
         cur = conn.cursor()
 
+        get_telemetry('movie_times_cinema_security_start')
         if security_mode == 'Decentralized':
 
             client_id = request.form.get("client_id")
@@ -173,6 +185,7 @@ def get_movie_times_per_cinema():
 
             if not "clientId" in data:
                 return jsonify({'success': False, 'details': f'Unauthorized to use this service.'}), 401
+        get_telemetry('movie_times_cinema_security_end')
 
         query = f"""SELECT mt.id as id_movies_times, m.title, CONCAT(v.name, ' ', v.location) as venue, mt.movie_date
                    FROM movie_time as mt
@@ -205,14 +218,17 @@ def get_movie_times_per_cinema():
         if conn is not None:
             cur.close()
             conn.close()
+        get_telemetry('movie_times_cinema_end')
 
 @app.route('/movie_seats_venue_times', methods=["POST"])
 def get_movie_seats_per_venue_and_times():
+    get_telemetry('movie_seats_venue_times_start')
     id_movie_time = request.form.get("id_movie_time")
     conn = psycopg2.connect("host='postgres' dbname='cinema' user='postgres' password='cinema123'")
     try:
         cur = conn.cursor()
 
+        get_telemetry('movie_seats_venue_times_security_start')
         if security_mode == 'Decentralized':
 
             client_id = request.form.get("client_id")
@@ -241,6 +257,7 @@ def get_movie_seats_per_venue_and_times():
 
             if not "clientId" in data:
                 return jsonify({'success': False, 'details': f'Unauthorized to use this service.'}), 401
+        get_telemetry('movie_seats_venue_times_security_end')
 
         query = f"""SELECT ms.id as id_movie_seat, ms.id_seat_type, m.title, CONCAT(v.name, ' ', v.location) as venue, ms.total_seats, ms.available_seats, ms.price::numeric::float, cv.value as ticket_type 
                    FROM movie_seat as ms
@@ -277,6 +294,18 @@ def get_movie_seats_per_venue_and_times():
         if conn is not None:
             cur.close()
             conn.close()
+        get_telemetry('movie_seats_venue_times_end')
+
+def get_telemetry(operation):
+    if telemetry:
+        cpu_usage = psutil.cpu_percent()
+        ram_usage = psutil.virtual_memory().percent
+        log(f"{datetime.now()},{operation},{cpu_usage},{ram_usage}")
+
+def log(text):
+    file = open("cinema_catalog.csv", "a")  
+    file.write(f"{text}\n")
+    file.close()   
 
 # Run the application
 if __name__ == '__main__':
