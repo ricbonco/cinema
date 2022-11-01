@@ -9,11 +9,11 @@ rm postgres/security_db_data -rf
 # docker-compose up --build -d
 # Run docker-compose and see console output in real time
 docker-compose up --build
-echo "Ricardo"
+#echo "Ricardo"
 #sleep 10
-echo "Ricardo 2"
+#echo "Ricardo 2"
 # Call to movies_cinema service
-curl localhost:8081/movies_cinema
+# curl localhost:8081/movies_cinema
 # Shutting down all services
 docker-compose down 
 

@@ -59,7 +59,7 @@ def get_movies():
 
         username = data["clientId"] if security_mode == 'Centralized' else client_id
 
-        #send_email(sender, email_address, subject, body)
+        send_email(sender, email_address, subject, body)
 
         query = f"""INSERT INTO "notification" ("sender", "recipient", "subject", "body", "time", "username") 
                     VALUES
