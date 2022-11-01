@@ -74,7 +74,6 @@ def post_book_seats():
                 id_movie_seat = seat_group["id_movie_seat"]
                 ticket_type = seat_group["ticket_type"]
 
-
         if available_seats is -1:
             return jsonify({'success': False, 'details': 'Error while reserving requested seats.'})
         if available_seats < requested_seats:

@@ -4,8 +4,9 @@
 from urllib import response
 from flask import Flask, request, jsonify, Response
 from flask_restful import Resource, Api
-import requests, psycopg2, json, os
+import requests, psycopg2, json, os, psutil
 from security import *
+from datetime import datetime
 
 # Instantiate the app
 app = Flask(__name__)
@@ -13,14 +14,17 @@ app.config['JSONIFY_PRETTYPRINT_REGULAR'] = False
 api = Api(app)
 
 security_mode = os.getenv('SECURITYMODE')
+telemetry = os.getenv('TELEMETRY') == 'On'
 
 # Create routes
 @app.route('/movies')
 def get_movies():
+    get_telemetry('movies_start')
     conn = psycopg2.connect("host='postgres' dbname='cinema' user='postgres' password='cinema123'")
     try:
         cur = conn.cursor()
 
+        get_telemetry('movies_security_start')
         if security_mode == 'Decentralized':
 
             client_id = request.form.get("client_id")
@@ -37,6 +41,8 @@ def get_movies():
         else:        
             authorizationHeader = request.headers.get('authorization')	
 
+            print (f'Ricardo {authorizationHeader}', flush=True)
+
             header = {'Authorization': f'{authorizationHeader}'}
 
             url = "http://security-service/verify"
@@ -49,6 +55,7 @@ def get_movies():
 
             if not "clientId" in data:
                 return jsonify({'success': False, 'details': f'Unauthorized to use this service.'}), 401
+        get_telemetry('movies_security_end')
 
         query = "SELECT m.id, m.title, m.year, m.director, m.runtime_minutes, m.genres FROM movie AS m"
         
@@ -72,6 +79,19 @@ def get_movies():
         if conn is not None:
             cur.close()
             conn.close()
+        get_telemetry('movies_end')
+        
+
+def get_telemetry(operation):
+    if telemetry:
+        cpu_usage = psutil.cpu_percent()
+        ram_usage = psutil.virtual_memory().percent
+        log(f"{datetime.now()},{operation},{cpu_usage},{ram_usage}")
+
+def log(text):
+    file = open("movies.csv", "a")  
+    file.write(f"{text}\n")
+    file.close()            
     
 # Run the application
 if __name__ == '__main__':
