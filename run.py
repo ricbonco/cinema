@@ -6,10 +6,10 @@ def run_movies_flow(cycles):
     for i in range(cycles):
         get_telemetry('movies_flow_start')
 
-        print(f"Cycle #{i}")
+        print(f" Cycle #{i}")
 
         # Calling movies
-        print(" Running 'movies' service")  
+        print("  Running 'movies' service")  
         url = "http://localhost:8081/movies"
         body = {'client_id' : client_id, 'client_secret' : client_secret}
         r = requests.get(url, data = body, headers = header)
@@ -19,13 +19,14 @@ def run_movies_flow(cycles):
 
 def run_cinema_catalog_flow(cycles):    
     print("Running 'run_cinema_catalog_flow'")  
+    potential_bookings = []
     for i in range(cycles):
         get_telemetry('cinema_catalog_flow_start')
 
-        print(f"Cycle #{i}")
+        print(f" Cycle #{i}")
 
         # Calling venues
-        print(" Running 'venues' service")  
+        print("  Running 'venues' service")  
         url = "http://localhost:8082/venues"
         body = {'client_id' : client_id, 'client_secret' : client_secret}
         r = requests.get(url, data = body, headers = header)
@@ -36,7 +37,7 @@ def run_cinema_catalog_flow(cycles):
         id_venue = data["venues"][index]["id_venue"]
 
         # Calling movies_cinema
-        print(" Running 'movies_cinema' service")  
+        print("  Running 'movies_cinema' service")  
         url = "http://localhost:8082/movies_cinema"
         body = {'client_id' : client_id, 'client_secret' : client_secret, 'id_venue' : id_venue}
         r = requests.post(url, data = body, headers = header)
@@ -47,7 +48,7 @@ def run_cinema_catalog_flow(cycles):
         id_movie_venue = data["movies_by_venues"][index]["id_movie_venue"]
         
         # Calling movie_times_cinema
-        print(" Running 'movie_times_cinema' service")  
+        print("  Running 'movie_times_cinema' service")  
         url = "http://localhost:8082/movie_times_cinema"
         body = {'client_id' : client_id, 'client_secret' : client_secret, 'id_movie_venue' : id_movie_venue}
         r = requests.post(url, data = body, headers = header)
@@ -58,14 +59,48 @@ def run_cinema_catalog_flow(cycles):
         id_movie_time = data["movie_times_cinema"][index]["id_movies_times"]
 
         # Calling movie_seats_venue_times
-        print(" Running 'movie_seats_venue_times' service")  
+        print("  Running 'movie_seats_venue_times' service")  
         url = "http://localhost:8082/movie_seats_venue_times"
         body = {'client_id' : client_id, 'client_secret' : client_secret, 'id_movie_time' : id_movie_time}
         r = requests.post(url, data = body, headers = header)
         print_response(url, r)
         data = json.loads(r.text)
+        movie_seats_venue_times_count = len(data["movie_seats_venue_times"])
+        index = random.randint(0, movie_seats_venue_times_count-1)
+        id_seat_type = data["movie_seats_venue_times"][index]["id_seat_type"]
         
+        potential_bookings.append({'id_movie_time' : id_movie_time, 'id_seat_type': id_seat_type})
+
         get_telemetry('cinema_catalog_flow_end')
+
+    return potential_bookings
+
+def run_bookings_flow(cycles, potential_bookings):    
+    print("Running 'run_bookings_flow'")  
+    for i in range(cycles):
+        get_telemetry('bookings_flow_start')
+
+        data = potential_bookings[i]
+
+        id_movie_time = data["id_movie_time"]
+        id_seat_type = data["id_seat_type"]
+        requested_seats = 2 # Ricardo randomize
+
+        print(f" Cycle #{i}")
+
+        # Calling bookings service
+        print("  Running 'bookings' service")  
+        url = "http://localhost:8083/book"
+        body = {'client_id' : client_id, 'client_secret' : client_secret, 'id_movie_time': id_movie_time, 
+                'id_seat_type' : id_seat_type, 'requested_seats': requested_seats}
+        r = requests.post(url, data = body, headers = header)
+        print_response(url, r)
+        data = json.loads(r.text)
+        #venues_count = len(data["venues"])
+        #index = random.randint(0, venues_count-1)
+        #id_venue = data["venues"][index]["id_venue"]
+        
+        get_telemetry('bookings_flow_end')
 
 def copy_logs():
     now = datetime.now().strftime("%Y-%m-%d_%H.%M.%S")
@@ -79,10 +114,11 @@ def copy_logs():
         shutil.move("movies/movies.csv", f"{logs_directory}/movies.csv")
     if os.path.exists("cinema_catalog/cinema_catalog.csv"):        
         shutil.move("cinema_catalog/cinema_catalog.csv", f"{logs_directory}/cinema_catalog.csv")
-    
+    if os.path.exists("bookings/bookings.csv"):        
+        shutil.move("bookings/bookings.csv", f"{logs_directory}/bookings.csv")
 
 def print_response(url, response):
-    print(f"  URL: {url}\n    Status Code: {response.status_code}\n      Output: {response.text}")
+    print(f"   URL: {url}\n     Status Code: {response.status_code}\n       Output: {response.text}")
 
 def get_telemetry(operation):
     if telemetry:
@@ -126,7 +162,8 @@ def main():
     get_telemetry('test_start')
 
     run_movies_flow(5)
-    run_cinema_catalog_flow(5)
+    potential_bookings = run_cinema_catalog_flow(5)
+    run_bookings_flow(len(potential_bookings), potential_bookings)
 
     get_telemetry('test_end')
 
