@@ -3,10 +3,11 @@
 # Import framework
 from flask import Flask, request, jsonify
 from flask_restful import Resource, Api
-import requests, psycopg2, smtplib, json, os
+import requests, psycopg2, smtplib, json, os, psutil
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from security import *
+from datetime import datetime
 
 # Instantiate the app
 app = Flask(__name__)
@@ -14,10 +15,12 @@ app.config['JSONIFY_PRETTYPRINT_REGULAR'] = False
 api = Api(app)
 
 security_mode = os.getenv('SECURITYMODE')
+telemetry = os.getenv('TELEMETRY') == 'On'
 
 # Create routes
 @app.route('/notify', methods=["POST"])
-def get_movies():
+def post_notify():
+    get_telemetry('notifications_start')
     email_address = request.form.get("email_address")
     subject = request.form.get("subject")
     body = request.form.get("body")
@@ -28,6 +31,7 @@ def get_movies():
         
         cur = conn.cursor()
 
+        get_telemetry('notifications_security_start')
         if security_mode == 'Decentralized':
 
             client_id = request.form.get("client_id")
@@ -56,6 +60,7 @@ def get_movies():
 
             if not "clientId" in data:
                 return jsonify({'success': False, 'details': f'Unauthorized to use this service.'}), 401
+        get_telemetry('notifications_security_end')
 
         username = data["clientId"] if security_mode == 'Centralized' else client_id
 
@@ -90,6 +95,7 @@ def get_movies():
         if conn is not None:
             cur.close()
             conn.close()
+        get_telemetry('notifications_end')
 
 def send_email(sender, recipient, subject, text):
     #Setup the MIME
@@ -106,6 +112,17 @@ def send_email(sender, recipient, subject, text):
     text = message.as_string()
     session.sendmail(sender, recipient, text)
     session.quit()
+
+def get_telemetry(operation):
+    if telemetry:
+        cpu_usage = psutil.cpu_percent()
+        ram_usage = psutil.virtual_memory().percent
+        log(f"{datetime.now()},{operation},{cpu_usage},{ram_usage}")
+
+def log(text):
+    file = open("notifications.csv", "a")  
+    file.write(f"{text}\n")
+    file.close() 
 
 # Run the application
 if __name__ == '__main__':

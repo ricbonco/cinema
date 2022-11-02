@@ -3,8 +3,9 @@
 # Import framework
 from flask import Flask, request, jsonify
 from flask_restful import Resource, Api
-import requests, psycopg2, json, os
+import requests, psycopg2, json, os, psutil
 from security import *
+from datetime import datetime
 
 # Instantiate the app
 app = Flask(__name__)
@@ -12,14 +13,17 @@ app.config['JSONIFY_PRETTYPRINT_REGULAR'] = False
 api = Api(app)
 
 security_mode = os.getenv('SECURITYMODE')
+telemetry = os.getenv('TELEMETRY') == 'On'
 
 # Create routes
 @app.route('/payments')
 def get_payments():
+    get_telemetry('payments_start')
     conn = psycopg2.connect("host='postgres' dbname='cinema' user='postgres' password='cinema123'")
     try:
         cur = conn.cursor()
 
+        get_telemetry('payments_security_start')
         if security_mode == 'Decentralized':
 
             client_id = request.form.get("client_id")
@@ -48,6 +52,7 @@ def get_payments():
 
             if not "clientId" in data:
                 return jsonify({'success': False, 'details': f'Unauthorized to use this service.'}), 401
+        get_telemetry('payments_security_end')
 
         query = """SELECT p.id AS id_payments, p.id_booking, p.approved, p.last_digits, p.time, p.username
                    FROM payment AS p"""
@@ -72,13 +77,16 @@ def get_payments():
         if conn is not None:
             cur.close()
             conn.close()
+        get_telemetry('payments_end')
 
 @app.route('/notifications')
 def get_notifications():
+    get_telemetry('notifications_start')
     conn = psycopg2.connect("host='postgres' dbname='cinema' user='postgres' password='cinema123'")
     try:
         cur = conn.cursor()
 
+        get_telemetry('notifications_security_start')
         if security_mode == 'Decentralized':
 
             client_id = request.form.get("client_id")
@@ -107,6 +115,7 @@ def get_notifications():
 
             if not "clientId" in data:
                 return jsonify({'success': False, 'details': f'Unauthorized to use this service.'}), 401
+        get_telemetry('notifications_security_end')
 
         query = """SELECT n.id AS id_notification, n.sender, n.recipient, n.subject, n.body, n.time, n.username
                    FROM notification AS n"""
@@ -131,6 +140,18 @@ def get_notifications():
         if conn is not None:
             cur.close()
             conn.close()
+        get_telemetry('notifications_end')
+
+def get_telemetry(operation):
+    if telemetry:
+        cpu_usage = psutil.cpu_percent()
+        ram_usage = psutil.virtual_memory().percent
+        log(f"{datetime.now()},{operation},{cpu_usage},{ram_usage}")
+
+def log(text):
+    file = open("reports.csv", "a")  
+    file.write(f"{text}\n")
+    file.close() 
 
 # Run the application
 if __name__ == '__main__':
