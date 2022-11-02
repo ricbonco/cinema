@@ -140,6 +140,29 @@ def run_payments_flow(actual_bookings):
         
         get_telemetry('payments_flow_end')
 
+def run_reports_flow(cycles):
+    print("Running 'run_reports_flow'")
+    for i in range(cycles):
+        get_telemetry('reports_flow_start')
+
+        print(f" Cycle #{i}")
+
+        # Calling payments
+        print("  Running 'payments' service")  
+        url = "http://localhost:8086/payments"
+        body = {'client_id' : client_id, 'client_secret' : client_secret}
+        r = requests.get(url, data = body, headers = header)
+        print_response(url, r)
+
+        # Calling notifications
+        print("  Running 'notifications' service")  
+        url = "http://localhost:8086/notifications"
+        body = {'client_id' : client_id, 'client_secret' : client_secret}
+        r = requests.get(url, data = body, headers = header)
+        print_response(url, r)
+
+        get_telemetry('reports_flow_end')        
+
 def convert_csv_to_xlsx(csv_location, xlsx_location):
     read_file = pd.read_csv (csv_location)
     read_file.to_excel (xlsx_location, index = None, header=True)
@@ -166,6 +189,12 @@ def copy_logs():
     if os.path.exists("payments/payments.csv"):
         convert_csv_to_xlsx("payments/payments.csv", f"{logs_directory}/payments.xlsx")
         shutil.move("payments/payments.csv", f"{logs_directory}/payments.csv")
+    if os.path.exists("notifications/notifications.csv"):
+        convert_csv_to_xlsx("notifications/notifications.csv", f"{logs_directory}/notifications.xlsx")
+        shutil.move("notifications/notifications.csv", f"{logs_directory}/notifications.csv")
+    if os.path.exists("reports/reports.csv"):
+        convert_csv_to_xlsx("reports/reports.csv", f"{logs_directory}/reports.xlsx")
+        shutil.move("reports/reports.csv", f"{logs_directory}/reports.csv")
 
 def print_response(url, response):
     print(f"   URL: {url}\n     Status Code: {response.status_code}\n       Output: {response.text}")
@@ -208,14 +237,17 @@ def set_up(print_telemetry, user_id, user_password):
 
 def main():
     
+    cycles = 5
+
     set_up(True, 'ricardo', 'ricardo1234')
 
     get_telemetry('test_start')
 
-    run_movies_flow(5)
-    potential_bookings = run_cinema_catalog_flow(5)
+    run_movies_flow(cycles)
+    potential_bookings = run_cinema_catalog_flow(cycles)
     actual_bookings = run_bookings_flow(potential_bookings)
     run_payments_flow(actual_bookings)
+    run_reports_flow(cycles)
 
     get_telemetry('test_end')
 
