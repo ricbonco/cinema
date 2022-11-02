@@ -1,4 +1,4 @@
-import os, shutil, requests, psutil, json, random
+import os, shutil, requests, psutil, json, random, pandas as pd
 from datetime import datetime 
 
 def run_movies_flow(cycles):
@@ -75,9 +75,10 @@ def run_cinema_catalog_flow(cycles):
 
     return potential_bookings
 
-def run_bookings_flow(cycles, potential_bookings):    
-    print("Running 'run_bookings_flow'")  
-    for i in range(cycles):
+def run_bookings_flow(potential_bookings):    
+    print("Running 'run_bookings_flow'") 
+    actual_bookings = [] 
+    for i in range(len(potential_bookings)):
         get_telemetry('bookings_flow_start')
 
         data = potential_bookings[i]
@@ -96,26 +97,75 @@ def run_bookings_flow(cycles, potential_bookings):
         r = requests.post(url, data = body, headers = header)
         print_response(url, r)
         data = json.loads(r.text)
-        #venues_count = len(data["venues"])
-        #index = random.randint(0, venues_count-1)
-        #id_venue = data["venues"][index]["id_venue"]
+
+        if "success" not in data:
+            actual_bookings.append(data["id_booking"])
         
         get_telemetry('bookings_flow_end')
 
+    return actual_bookings
+
+def run_payments_flow(actual_bookings):    
+    print("Running 'run_payments_flow'") 
+    for i in range(len(actual_bookings)):
+        get_telemetry('payments_flow_start')
+
+        id_booking = actual_bookings[i]
+
+        print(f" Cycle #{i}")
+
+        # Calling subtotal
+        print("  Running 'subtotal' service")  
+        url = "http://localhost:8084/subtotal"
+        body = {'client_id' : client_id, 'client_secret' : client_secret, 'id_booking': id_booking}
+        r = requests.get(url, data = body, headers = header)
+        print_response(url, r)
+
+        # Calling pay
+        print("  Running 'pay' service")  
+        url = "http://localhost:8084/pay"
+        card_number = f'377{random.randint(700000000000, 799999999999)}'
+        expiration_date = f'{random.randint(1, 12):02d}/{random.randint(24, 30)}'
+        card_verification_value = f'{random.randint(0000, 9999):02d}'
+        body = {'client_id' : client_id, 'client_secret' : client_secret, 'id_booking': id_booking, 
+                'card_number' : card_number, 
+                'expiration_date': expiration_date, 
+                'card_verification_value' : card_verification_value}
+        r = requests.post(url, data = body, headers = header)
+        print_response(url, r)
+        data = json.loads(r.text)
+
+        #if "success" not in data:
+        #    actual_bookings.append(data["id_booking"])
+        
+        get_telemetry('payments_flow_end')
+
+def convert_csv_to_xlsx(csv_location, xlsx_location):
+    read_file = pd.read_csv (csv_location)
+    read_file.to_excel (xlsx_location, index = None, header=True)
+
 def copy_logs():
+    print("Copying and converting logs")    
     now = datetime.now().strftime("%Y-%m-%d_%H.%M.%S")
     logs_directory = f"logs/{now}"
     if not os.path.isdir("logs"):
         os.mkdir("logs")
     os.mkdir(logs_directory)
     if os.path.exists("log.csv"):
+        convert_csv_to_xlsx("log.csv", f"{logs_directory}/log.xlsx")
         shutil.move("log.csv", f"{logs_directory}/log.csv")
     if os.path.exists("movies/movies.csv"):
+        convert_csv_to_xlsx("movies/movies.csv", f"{logs_directory}/movies.xlsx")
         shutil.move("movies/movies.csv", f"{logs_directory}/movies.csv")
     if os.path.exists("cinema_catalog/cinema_catalog.csv"):        
+        convert_csv_to_xlsx("cinema_catalog/cinema_catalog.csv", f"{logs_directory}/cinema_catalog.xlsx")
         shutil.move("cinema_catalog/cinema_catalog.csv", f"{logs_directory}/cinema_catalog.csv")
     if os.path.exists("bookings/bookings.csv"):        
+        convert_csv_to_xlsx("bookings/bookings.csv", f"{logs_directory}/bookings.xlsx")
         shutil.move("bookings/bookings.csv", f"{logs_directory}/bookings.csv")
+    if os.path.exists("payments/payments.csv"):
+        convert_csv_to_xlsx("payments/payments.csv", f"{logs_directory}/payments.xlsx")
+        shutil.move("payments/payments.csv", f"{logs_directory}/payments.csv")
 
 def print_response(url, response):
     print(f"   URL: {url}\n     Status Code: {response.status_code}\n       Output: {response.text}")
@@ -145,6 +195,7 @@ def authenticate(client_id, client_secret):
         return False
 
 def set_up(print_telemetry, user_id, user_password):
+    print("Setting up experiment")    
     global telemetry, client_id, client_secret, header
 
     telemetry = print_telemetry
@@ -163,7 +214,8 @@ def main():
 
     run_movies_flow(5)
     potential_bookings = run_cinema_catalog_flow(5)
-    run_bookings_flow(len(potential_bookings), potential_bookings)
+    actual_bookings = run_bookings_flow(potential_bookings)
+    run_payments_flow(actual_bookings)
 
     get_telemetry('test_end')
 
