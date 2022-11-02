@@ -5,8 +5,9 @@ from operator import mod
 from flask import Flask, request, jsonify
 from flask_restful import Resource, Api
 from datetime import date
-import requests, psycopg2, json, random, os
+import requests, psycopg2, json, random, os, psutil
 from security import *
+from datetime import datetime
 
 # Instantiate the app
 app = Flask(__name__)
@@ -14,15 +15,18 @@ app.config['JSONIFY_PRETTYPRINT_REGULAR'] = False
 api = Api(app)
 
 security_mode = os.getenv('SECURITYMODE')
+telemetry = os.getenv('TELEMETRY') == 'On'
 
 # Create routes
 @app.route('/subtotal')
 def get_subtotal():
+    get_telemetry('subtotal_start')
     id_booking = request.form.get("id_booking")
     conn = psycopg2.connect("host='postgres' dbname='cinema' user='postgres' password='cinema123'")
     try:
         cur = conn.cursor()
 
+        get_telemetry('subtotal_security_start')
         if security_mode == 'Decentralized':
 
             client_id = request.form.get("client_id")
@@ -51,6 +55,7 @@ def get_subtotal():
 
             if not "clientId" in data:
                 return jsonify({'success': False, 'details': f'Unauthorized to use this service.'}), 401
+        get_telemetry('subtotal_security_end')
 
         query = f"""SELECT b.id AS id_booking, b.reserved_seats * ms.price::numeric::float AS subtotal
                     FROM booking AS b
@@ -78,9 +83,11 @@ def get_subtotal():
         if conn is not None:
             cur.close()
             conn.close()
+        get_telemetry('subtotal_end')
 
 @app.route('/pay', methods=["POST"])
 def make_payment():
+    get_telemetry('pay_start')
     id_booking = request.form.get("id_booking")
     card_number = request.form.get("card_number")
     expiration_date = request.form.get("expiration_date")
@@ -90,6 +97,7 @@ def make_payment():
     try:
         cur = conn.cursor()
 
+        get_telemetry('pay_security_start')
         if security_mode == 'Decentralized':
 
             client_id = request.form.get("client_id")
@@ -118,6 +126,7 @@ def make_payment():
 
             if not "clientId" in data:
                 return jsonify({'success': False, 'details': f'Unauthorized to use this service.'}), 401
+        get_telemetry('pay_security_end')
 
         username = data["clientId"] if security_mode == 'Centralized' else client_id
 
@@ -163,6 +172,7 @@ def make_payment():
         if updated_rows is 1:
             conn.commit()
             
+            get_telemetry('pay_notify_start')
             url = "http://notifications-service/notify"
 
             if payment_approved:
@@ -172,6 +182,7 @@ def make_payment():
                         f"""Your order {id_payment} has been processed succesfully at {date.today()}!
                         Amount: {payment_amount}"""}
                 r = requests.post(url, data = body, headers = header) if security_mode == 'Centralized' else requests.post(url, data = body)
+                get_telemetry('pay_notify_end')                
 
                 if r.status_code != 200:
                     return jsonify({'success': False, 'details': f'Error while contacting notification service. Status code: {r.status_code}'})
@@ -183,6 +194,7 @@ def make_payment():
                         'body' : 
                         f"""Your payment of {payment_amount} was declined by your card issuer. Please try again."""}
                 r = requests.post(url, data = body, headers = header) if security_mode == 'Centralized' else requests.post(url, data = body)
+                get_telemetry('pay_notify_end')
 
                 if r.status_code != 200:
                     return jsonify({'success': False, 'details': f'Error while contacting notification service. Status code: {r.status_code}'})
@@ -202,11 +214,23 @@ def make_payment():
         if conn is not None:
             cur.close()
             conn.close()
+        get_telemetry('pay_end')
 
 def make_payment(card_number, expiration_date, card_verification_value, amount):
     # Simulate VPOS payments with pseudo random nummbers
     #return mod(random.randint(0, 8), 8) is not 0
     return mod(random.randint(0, 2), 2) is not 0
+
+def get_telemetry(operation):
+    if telemetry:
+        cpu_usage = psutil.cpu_percent()
+        ram_usage = psutil.virtual_memory().percent
+        log(f"{datetime.now()},{operation},{cpu_usage},{ram_usage}")
+
+def log(text):
+    file = open("payments.csv", "a")  
+    file.write(f"{text}\n")
+    file.close()  
 
 # Run the application
 if __name__ == '__main__':
