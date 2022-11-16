@@ -126,7 +126,7 @@ def run_payments_flow(actual_bookings):
         url = "http://localhost:8084/pay"
         card_number = f'377{random.randint(700000000000, 799999999999)}'
         expiration_date = f'{random.randint(1, 12):02d}/{random.randint(24, 30)}'
-        card_verification_value = f'{random.randint(0000, 9999):02d}'
+        card_verification_value = f'{random.randint(0000, 9999):04d}'
         body = {'client_id' : client_id, 'client_secret' : client_secret, 'id_booking': id_booking, 
                 'card_number' : card_number, 
                 'expiration_date': expiration_date, 
@@ -235,8 +235,8 @@ def set_up(print_telemetry, user_id, user_password):
 
     header = {'Authorization': f'Bearer {token}'}
 
-def main():
-    
+def happy_flow():
+    print("Running '*happy_flow*'")
     cycles = 5
 
     set_up(True, 'ricardo', 'ricardo1234')
@@ -252,6 +252,31 @@ def main():
     get_telemetry('test_end')
 
     copy_logs()
+
+def single_flow():
+    print("Running '*single_flow*'")
+    cycles = 5
+
+    for i in range(cycles):
+
+        set_up(True, 'ricardo', 'ricardo1234')
+
+        get_telemetry('test_start')
+
+        run_movies_flow(1)
+        potential_bookings = run_cinema_catalog_flow(1)
+        actual_bookings = run_bookings_flow(potential_bookings)
+        run_payments_flow(actual_bookings)
+        run_reports_flow(1)
+
+        get_telemetry('test_end')
+
+    copy_logs()    
+
+def main():
+    
+    happy_flow()
+    single_flow()
 
 if __name__ == "__main__":
     main()
