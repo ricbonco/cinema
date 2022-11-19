@@ -3,7 +3,7 @@
 -- DROP DATABASE authdb_dev;
 
 CREATE ROLE authdb_read;
-CREATE USER auth_user WITH ENCRYPTED PASSWORD 'mypassword';
+CREATE USER auth_user WITH ENCRYPTED PASSWORD 'Eh8Q1*IGOpGK!Qd*9SB5T8DnmIxjo&@1B4nxIbT15ePLSNHViy';
 GRANT authdb_read TO auth_user;
 
 CREATE DATABASE authdb_dev
@@ -31,13 +31,18 @@ CREATE TABLE public.clients
 
 INSERT INTO public.clients ("ClientId", "ClientSecret", "IsAdmin", "IsEmployee") 
 VALUES 
-  ('sysadmin', '274644223f33149c4cb8fc2e30a7cc6e59622809', TRUE, TRUE),
-  ('ricardo', '8e7915f5a99b2f9cbf494d1fd3c7a8952114279d', TRUE, TRUE);
+  -- Admin Role
+  ('sysadmin', 'fcb9728b3698d0fc32436cbd33e1c11fe0ba0daf', TRUE, TRUE),
+  -- Admin Role
+  ('cinemaadmin', '08eff19c752e1cbaf913091252b97529a4aae3ee', TRUE, TRUE),
+  -- Employee Role
+  ('cinemaemployee', 'f96ee118bad4e713726e86f06a9d68e67308814d', FALSE, TRUE),
+  -- Customer Role
+  ('cinemacustomer', 'eaebaa3a0fa62f87c4216040d6e1d7e054f63a90', FALSE, FALSE);
 
 SELECT * FROM public.clients;
 
 \c authdb_dev postgres
-
 
 ALTER TABLE public.clients
     OWNER to postgres;
@@ -45,7 +50,7 @@ ALTER TABLE public.clients
 GRANT SELECT ON TABLE public.clients TO authdb_read;
 
 GRANT ALL ON TABLE public.clients TO postgres;
-GRANT ALL ON TABLE public.clients TO auth_user; -- RICARDO
+GRANT ALL ON TABLE public.clients TO auth_user; 
 GRANT ALL PRIVILEGES ON TABLE public.clients TO auth_user;
 
 CREATE TABLE public.blacklist

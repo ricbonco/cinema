@@ -41,8 +41,6 @@ def get_movies():
         else:        
             authorizationHeader = request.headers.get('authorization')	
 
-            print (f'Ricardo {authorizationHeader}', flush=True)
-
             header = {'Authorization': f'{authorizationHeader}'}
 
             url = "http://security-service/verify"
@@ -50,11 +48,14 @@ def get_movies():
 
             if r.status_code != 200:
                 return jsonify({'success': False, 'details': f'Error while contacting security service. Status code: {r.status_code}'})
-
+ 
             data = json.loads(r.text)
 
             if not "clientId" in data:
                 return jsonify({'success': False, 'details': f'Unauthorized to use this service.'}), 401
+            
+            isAdmin = data['isAdmin']
+            isEmployee = data['isEmployee']
         get_telemetry('movies_security_end')
 
         query = "SELECT m.id, m.title, m.year, m.director, m.runtime_minutes, m.genres FROM movie AS m"

@@ -239,7 +239,7 @@ def happy_flow():
     print("Running '*happy_flow*'")
     cycles = 5
 
-    set_up(True, 'ricardo', 'ricardo1234')
+    set_up(True, 'cinemaadmin', '@dm1nP@$$w0rd')
 
     get_telemetry('test_start')
 
@@ -259,7 +259,7 @@ def single_flow():
 
     for i in range(cycles):
 
-        set_up(True, 'ricardo', 'ricardo1234')
+        set_up(True, 'cinemaadmin', '@dm1nP@$$w0rd')
 
         get_telemetry('test_start')
 
