@@ -16,6 +16,7 @@ api = Api(app)
 
 security_mode = os.getenv('SECURITYMODE')
 telemetry = os.getenv('TELEMETRY') == 'On'
+send_email = os.getenv('SEND_EMAIL') == 'On'
 
 # Create routes
 @app.route('/notify', methods=["POST"])
@@ -68,9 +69,8 @@ def post_notify():
 
         username = data["clientId"] if security_mode == 'Centralized' else client_id
 
-        print("Ricardo 3", flush=True)
-
-        #send_email(sender, email_address, subject, body)
+        if send_email:
+            send_email(sender, email_address, subject, body)
 
         query = f"""INSERT INTO "notification" ("sender", "recipient", "subject", "body", "time", "username") 
                     VALUES

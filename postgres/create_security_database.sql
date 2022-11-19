@@ -66,5 +66,5 @@ ALTER TABLE public.blacklist
 GRANT SELECT ON TABLE public.blacklist TO authdb_read;
 
 GRANT ALL ON TABLE public.blacklist TO postgres;
-GRANT ALL ON TABLE public.blacklist TO auth_user; -- RICARDO
+GRANT ALL ON TABLE public.blacklist TO auth_user; 
 GRANT ALL PRIVILEGES ON TABLE public.blacklist TO auth_user;

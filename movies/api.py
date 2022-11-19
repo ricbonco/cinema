@@ -60,8 +60,6 @@ def get_movies():
             
             isAdmin = data['isAdmin']
             isEmployee = data['isEmployee']
-            print(f'Ricardo isAdmin {isAdmin}', flush=True)
-            print(f'Ricardo isEmployee {isAdmin}', flush=True)
         get_telemetry('movies_security_end')
 
         query = "SELECT m.id, m.title, m.year, m.director, m.runtime_minutes, m.genres FROM movie AS m"
