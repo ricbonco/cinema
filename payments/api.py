@@ -180,7 +180,12 @@ def make_payment():
                         'subject' : f'Your order {id_payment} has been processed!',
                         'body' : 
                         f"""Your order {id_payment} has been processed succesfully at {date.today()}!
-                        Amount: {payment_amount}"""}
+                        Amount: {payment_amount}"""} 
+
+                if security_mode == "Decentralized":
+                    body["client_id"] = client_id
+                    body["client_secret"] = client_secret
+
                 r = requests.post(url, data = body, headers = header) if security_mode == 'Centralized' else requests.post(url, data = body)
                 get_telemetry('pay_notify_end')                
 
@@ -193,6 +198,11 @@ def make_payment():
                         'subject' : f'Error when processing your order!',
                         'body' : 
                         f"""Your payment of {payment_amount} was declined by your card issuer. Please try again."""}
+
+                if security_mode == "Decentralized":
+                    body["client_id"] = client_id
+                    body["client_secret"] = client_secret
+
                 r = requests.post(url, data = body, headers = header) if security_mode == 'Centralized' else requests.post(url, data = body)
                 get_telemetry('pay_notify_end')
 

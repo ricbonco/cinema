@@ -47,7 +47,7 @@ def authenticate(clientId, clientSecret):
                 break
 
             encoded_jwt = jwt.encode(payload.__dict__, AUTHSECRET, algorithm='HS256')
-            response = authResponse(encoded_jwt,EXPIRESSECONDS, isAdmin, isEmployee)
+            response = authResponse(encoded_jwt, EXPIRESSECONDS, isAdmin, isEmployee)
             
             return response.__dict__
         else:

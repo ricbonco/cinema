@@ -132,11 +132,8 @@ services:
 
     # Mount an initialization script and the persistent postgresql data volume
     volumes:
-      - ./postgres/data:/var/lib/postgresql/data
-#      - ./postgres/create_clients_table.sql:/docker-entrypoint-initdb.d/create_clients_table.sql
-#      - ./postgres/create_blacklist_table.sql:/docker-entrypoint-initdb.d/create_blacklist_table.sql
-#      - ./postgres/create_database.sql:/docker-entrypoint-initdb.d/create_database.sql
-      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./postgres/cinema_db_data:/var/lib/postgresql/data
+      - ./postgres/create_cinema_database.sql:/docker-entrypoint-initdb.d/create_cinema_database.sql
 
     # Pass postgres environment variables
     environment:
@@ -157,14 +154,11 @@ services:
     # Mount an initialization script and the persistent postgresql data volume
     volumes:
       - ./postgres/security_db_data:/var/lib/postgresql/data
-      - ./postgres/create_database.sql:/docker-entrypoint-initdb.d/create_database.sql
-#      - ./postgres/create_clients_table.sql:/docker-entrypoint-initdb.d/create_clients_table.sql
-#      - ./postgres/create_blacklist_table.sql:/docker-entrypoint-initdb.d/create_blacklist_table.sql
-#      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./postgres/create_security_database.sql:/docker-entrypoint-initdb.d/create_security_database.sql
 
     # Pass postgres environment variables
     environment:
-      POSTGRES_PASSWORD: mypassword
+      POSTGRES_PASSWORD: Eh8Q1*IGOpGK!Qd*9SB5T8DnmIxjo&@1B4nxIbT15ePLSNHViy
       POSTGRES_DB: auth_user
  
     # Expose port 5432 to other Docker containers

@@ -60,6 +60,7 @@ def client():
             # the client secret in the database is "hashed" with a one-way hash
             hash_object = hashlib.sha1(bytes(client_secret_input, 'utf-8'))
             hashed_client_secret = hash_object.hexdigest()
+            print(f"Ricardo client_secret {hashed_client_secret}")
 
             # make a call to the model to authenticate
             createResponse = authModel.create(client_id, hashed_client_secret, is_admin, is_employee)
