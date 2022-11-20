@@ -35,6 +35,7 @@ def get_subtotal():
             auth = authenticate(client_id, client_secret)
 
             if not auth:
+                get_telemetry('subtotal_security_end')
                 return jsonify({'success': False, 'details': f'Unauthorized to use this service.'}), 401
             else:
                 isAdmin = auth['isAdmin']
@@ -49,11 +50,13 @@ def get_subtotal():
             r = requests.post(url, headers = header)
 
             if r.status_code != 200:
+                get_telemetry('subtotal_security_end')
                 return jsonify({'success': False, 'details': f'Error while contacting security service. Status code: {r.status_code}'})
 
             data = json.loads(r.text)
 
             if not "clientId" in data:
+                get_telemetry('subtotal_security_end')
                 return jsonify({'success': False, 'details': f'Unauthorized to use this service.'}), 401
 
             isAdmin = data['isAdmin']
@@ -109,6 +112,7 @@ def make_payment():
             auth = authenticate(client_id, client_secret)
 
             if not auth:
+                get_telemetry('pay_security_end')
                 return jsonify({'success': False, 'details': f'Unauthorized to use this service.'}), 401
             else:
                 isAdmin = auth['isAdmin']
@@ -123,11 +127,13 @@ def make_payment():
             r = requests.post(url, headers = header)
 
             if r.status_code != 200:
+                get_telemetry('pay_security_end')
                 return jsonify({'success': False, 'details': f'Error while contacting security service. Status code: {r.status_code}'})
 
             data = json.loads(r.text)
 
             if not "clientId" in data:
+                get_telemetry('pay_security_end')
                 return jsonify({'success': False, 'details': f'Unauthorized to use this service.'}), 401
 
             isAdmin = data['isAdmin']
@@ -244,9 +250,12 @@ def get_telemetry(operation):
         log(f"{datetime.now()},{operation},{cpu_usage},{ram_usage}")
 
 def log(text):
-    file = open("payments.csv", "a")  
+    file_name = "payments.csv"
+    file = open(file_name, "a")  
+    if os.path.getsize(file_name) == 0:
+        file.write(f"Time,Operation,CPU,RAM\n") 
     file.write(f"{text}\n")
-    file.close()  
+    file.close()   
 
 # Run the application
 if __name__ == '__main__':
