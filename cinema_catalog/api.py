@@ -51,6 +51,9 @@ def get_venues():
 
             if not "clientId" in data:
                 return jsonify({'success': False, 'details': f'Unauthorized to use this service.'}), 401
+
+            isAdmin = data['isAdmin']
+            isEmployee = data['isEmployee']
         get_telemetry('venues_security_end')
         
         query = "SELECT v.id as id_venue, v.name, v.location FROM venue AS v"
@@ -115,6 +118,9 @@ def get_movies_per_cinema():
 
             if not "clientId" in data:
                 return jsonify({'success': False, 'details': f'Unauthorized to use this service.'}), 401
+
+            isAdmin = data['isAdmin']
+            isEmployee = data['isEmployee']
         get_telemetry('movies_cinema_security_end')
 
         query = f"""SELECT mv.id as id_movie_venue, m.id as id_movie, m.title, v.id as id_venue, CONCAT(v.name, ' ', v.location) as venue_name
@@ -185,6 +191,9 @@ def get_movie_times_per_cinema():
 
             if not "clientId" in data:
                 return jsonify({'success': False, 'details': f'Unauthorized to use this service.'}), 401
+
+            isAdmin = data['isAdmin']
+            isEmployee = data['isEmployee']
         get_telemetry('movie_times_cinema_security_end')
 
         query = f"""SELECT mt.id as id_movies_times, m.title, CONCAT(v.name, ' ', v.location) as venue, mt.movie_date
@@ -257,6 +266,9 @@ def get_movie_seats_per_venue_and_times():
 
             if not "clientId" in data:
                 return jsonify({'success': False, 'details': f'Unauthorized to use this service.'}), 401
+
+            isAdmin = data['isAdmin']
+            isEmployee = data['isEmployee']
         get_telemetry('movie_seats_venue_times_security_end')
 
         query = f"""SELECT ms.id as id_movie_seat, ms.id_seat_type, m.title, CONCAT(v.name, ' ', v.location) as venue, ms.total_seats, ms.available_seats, ms.price::numeric::float, cv.value as ticket_type 

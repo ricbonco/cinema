@@ -16,7 +16,7 @@ api = Api(app)
 
 security_mode = os.getenv('SECURITYMODE')
 telemetry = os.getenv('TELEMETRY') == 'On'
-send_email = os.getenv('SEND_EMAIL') == 'On'
+send_actual_email = os.getenv('SENDEMAIL') == 'On'
 
 # Create routes
 @app.route('/notify', methods=["POST"])
@@ -33,13 +33,11 @@ def post_notify():
         cur = conn.cursor()
 
         get_telemetry('notifications_security_start')
-        print("Ricardo 1", flush=True)
         if security_mode == 'Decentralized':
 
             client_id = request.form.get("client_id")
             client_secret = request.form.get("client_secret")
 
-            print(f"Ricardo client id secret {client_id} secret {client_secret}", flush=True)
 
             auth = authenticate(client_id, client_secret)
 
@@ -64,20 +62,20 @@ def post_notify():
 
             if not "clientId" in data:
                 return jsonify({'success': False, 'details': f'Unauthorized to use this service.'}), 401
+
+            isAdmin = data['isAdmin']
+            isEmployee = data['isEmployee']
         get_telemetry('notifications_security_end')
-        print("Ricardo 2", flush=True)
 
         username = data["clientId"] if security_mode == 'Centralized' else client_id
 
-        if send_email:
+        if send_actual_email:
             send_email(sender, email_address, subject, body)
 
         query = f"""INSERT INTO "notification" ("sender", "recipient", "subject", "body", "time", "username") 
                     VALUES
                     ('{sender}', '{email_address}', '{subject}', '{body}', NOW(), '{username}')
                     returning id"""
-
-        print("Ricardo 4", flush=True)
 
         dbquery = cur.execute(query)
         id_notification = cur.fetchone()[0]
