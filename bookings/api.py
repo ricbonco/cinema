@@ -40,6 +40,7 @@ def post_book_seats():
             auth = authenticate(client_id, client_secret)
 
             if not auth:
+                get_telemetry('book_security_end')
                 return jsonify({'success': False, 'details': f'Unauthorized to use this service.'}), 401
             else:
                 isAdmin = auth['isAdmin']
@@ -54,11 +55,13 @@ def post_book_seats():
             r = requests.post(url, headers = header)
 
             if r.status_code != 200:
+                get_telemetry('book_security_end')
                 return jsonify({'success': False, 'details': f'Error while contacting security service. Status code: {r.status_code}'})
 
             data = json.loads(r.text)
 
             if not "clientId" in data:
+                get_telemetry('book_security_end')
                 return jsonify({'success': False, 'details': f'Unauthorized to use this service.'}), 401
 
             isAdmin = data['isAdmin']
@@ -144,7 +147,10 @@ def get_telemetry(operation):
         log(f"{datetime.now()},{operation},{cpu_usage},{ram_usage}")
 
 def log(text):
-    file = open("bookings.csv", "a")  
+    file_name = "bookings.csv"
+    file = open(file_name, "a")  
+    if os.path.getsize(file_name) == 0:
+        file.write(f"Time,Operation,CPU,RAM\n")
     file.write(f"{text}\n")
     file.close()      
 

@@ -31,6 +31,7 @@ def get_venues():
             auth = authenticate(client_id, client_secret)
 
             if not auth:
+                get_telemetry('venues_security_end')
                 return jsonify({'success': False, 'details': f'Unauthorized to use this service.'}), 401
             else:
                 isAdmin = auth['isAdmin']
@@ -45,11 +46,13 @@ def get_venues():
             r = requests.post(url, headers = header)
 
             if r.status_code != 200:
+                get_telemetry('venues_security_end')
                 return jsonify({'success': False, 'details': f'Error while contacting security service. Status code: {r.status_code}'})
 
             data = json.loads(r.text)
 
             if not "clientId" in data:
+                get_telemetry('venues_security_end')
                 return jsonify({'success': False, 'details': f'Unauthorized to use this service.'}), 401
 
             isAdmin = data['isAdmin']
@@ -98,6 +101,7 @@ def get_movies_per_cinema():
             auth = authenticate(client_id, client_secret)
 
             if not auth:
+                get_telemetry('movies_cinema_security_end')
                 return jsonify({'success': False, 'details': f'Unauthorized to use this service.'}), 401
             else:
                 isAdmin = auth['isAdmin']
@@ -112,11 +116,13 @@ def get_movies_per_cinema():
             r = requests.post(url, headers = header)
 
             if r.status_code != 200:
+                get_telemetry('movies_cinema_security_end')
                 return jsonify({'success': False, 'details': f'Error while contacting security service. Status code: {r.status_code}'})
 
             data = json.loads(r.text)
 
             if not "clientId" in data:
+                get_telemetry('movies_cinema_security_end')
                 return jsonify({'success': False, 'details': f'Unauthorized to use this service.'}), 401
 
             isAdmin = data['isAdmin']
@@ -171,6 +177,7 @@ def get_movie_times_per_cinema():
             auth = authenticate(client_id, client_secret)
 
             if not auth:
+                get_telemetry('movie_times_cinema_security_end')
                 return jsonify({'success': False, 'details': f'Unauthorized to use this service.'}), 401
             else:
                 isAdmin = auth['isAdmin']
@@ -185,11 +192,13 @@ def get_movie_times_per_cinema():
             r = requests.post(url, headers = header)
 
             if r.status_code != 200:
+                get_telemetry('movie_times_cinema_security_end')
                 return jsonify({'success': False, 'details': f'Error while contacting security service. Status code: {r.status_code}'})
 
             data = json.loads(r.text)
 
             if not "clientId" in data:
+                get_telemetry('movie_times_cinema_security_end')
                 return jsonify({'success': False, 'details': f'Unauthorized to use this service.'}), 401
 
             isAdmin = data['isAdmin']
@@ -246,6 +255,7 @@ def get_movie_seats_per_venue_and_times():
             auth = authenticate(client_id, client_secret)
 
             if not auth:
+                get_telemetry('movie_seats_venue_times_security_end')
                 return jsonify({'success': False, 'details': f'Unauthorized to use this service.'}), 401
             else:
                 isAdmin = auth['isAdmin']
@@ -260,11 +270,13 @@ def get_movie_seats_per_venue_and_times():
             r = requests.post(url, headers = header)
 
             if r.status_code != 200:
+                get_telemetry('movie_seats_venue_times_security_end')
                 return jsonify({'success': False, 'details': f'Error while contacting security service. Status code: {r.status_code}'})
 
             data = json.loads(r.text)
 
             if not "clientId" in data:
+                get_telemetry('movie_seats_venue_times_security_end')
                 return jsonify({'success': False, 'details': f'Unauthorized to use this service.'}), 401
 
             isAdmin = data['isAdmin']
@@ -315,7 +327,10 @@ def get_telemetry(operation):
         log(f"{datetime.now()},{operation},{cpu_usage},{ram_usage}")
 
 def log(text):
-    file = open("cinema_catalog.csv", "a")  
+    file_name = "cinema_catalog.csv"
+    file = open(file_name, "a")  
+    if os.path.getsize(file_name) == 0:
+        file.write(f"Time,Operation,CPU,RAM\n")  
     file.write(f"{text}\n")
     file.close()   
 

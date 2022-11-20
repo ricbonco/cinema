@@ -33,6 +33,7 @@ def get_movies():
             auth = authenticate(client_id, client_secret)
 
             if not auth:
+                get_telemetry('movies_security_end')
                 return jsonify({'success': False, 'details': f'Unauthorized to use this service.'}), 401
             else:
                 isAdmin = auth['isAdmin']
@@ -47,17 +48,20 @@ def get_movies():
             r = requests.post(url, headers = header)
 
             if r.status_code != 200:
+                get_telemetry('movies_security_end')
                 return jsonify({'success': False, 'details': f'Error while contacting security service. Status code: {r.status_code}'})
  
             data = json.loads(r.text)
 
             if not "clientId" in data:
+                get_telemetry('movies_security_end')
                 return jsonify({'success': False, 'details': f'Unauthorized to use this service.'}), 401
             
             isAdmin = data['isAdmin']
             isEmployee = data['isEmployee']
 
         if not isAdmin and not isEmployee:
+            get_telemetry('movies_security_end')
             return jsonify({'success': False, 'details': f'Unauthorized to use this service. Only admins or employees can access this service.'}), 401
 
         get_telemetry('movies_security_end')
@@ -94,9 +98,12 @@ def get_telemetry(operation):
         log(f"{datetime.now()},{operation},{cpu_usage},{ram_usage}")
 
 def log(text):
-    file = open("movies.csv", "a")  
+    file_name = "movies.csv"
+    file = open(file_name, "a")  
+    if os.path.getsize(file_name) == 0:
+        file.write(f"Time,Operation,CPU,RAM\n") 
     file.write(f"{text}\n")
-    file.close()            
+    file.close()             
     
 # Run the application
 if __name__ == '__main__':
