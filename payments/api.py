@@ -55,6 +55,9 @@ def get_subtotal():
 
             if not "clientId" in data:
                 return jsonify({'success': False, 'details': f'Unauthorized to use this service.'}), 401
+
+            isAdmin = data['isAdmin']
+            isEmployee = data['isEmployee']
         get_telemetry('subtotal_security_end')
 
         query = f"""SELECT b.id AS id_booking, b.reserved_seats * ms.price::numeric::float AS subtotal
@@ -126,6 +129,9 @@ def make_payment():
 
             if not "clientId" in data:
                 return jsonify({'success': False, 'details': f'Unauthorized to use this service.'}), 401
+
+            isAdmin = data['isAdmin']
+            isEmployee = data['isEmployee']
         get_telemetry('pay_security_end')
 
         username = data["clientId"] if security_mode == 'Centralized' else client_id
@@ -228,8 +234,8 @@ def make_payment():
 
 def make_payment(card_number, expiration_date, card_verification_value, amount):
     # Simulate VPOS payments with pseudo random nummbers
-    #return mod(random.randint(0, 8), 8) is not 0
-    return mod(random.randint(0, 2), 2) is not 0
+    return mod(random.randint(0, 8), 8) is not 0
+    # return mod(random.randint(0, 2), 2) is not 0
 
 def get_telemetry(operation):
     if telemetry:

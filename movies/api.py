@@ -56,6 +56,10 @@ def get_movies():
             
             isAdmin = data['isAdmin']
             isEmployee = data['isEmployee']
+
+        if not isAdmin and not isEmployee:
+            return jsonify({'success': False, 'details': f'Unauthorized to use this service. Only admins or employees can access this service.'}), 401
+
         get_telemetry('movies_security_end')
 
         query = "SELECT m.id, m.title, m.year, m.director, m.runtime_minutes, m.genres FROM movie AS m"

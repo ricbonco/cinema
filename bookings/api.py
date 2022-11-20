@@ -60,6 +60,9 @@ def post_book_seats():
 
             if not "clientId" in data:
                 return jsonify({'success': False, 'details': f'Unauthorized to use this service.'}), 401
+
+            isAdmin = data['isAdmin']
+            isEmployee = data['isEmployee']
         get_telemetry('book_security_end')
 
         username = data["clientId"] if security_mode == 'Centralized' else client_id

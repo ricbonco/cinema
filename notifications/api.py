@@ -16,7 +16,7 @@ api = Api(app)
 
 security_mode = os.getenv('SECURITYMODE')
 telemetry = os.getenv('TELEMETRY') == 'On'
-send_email = os.getenv('SEND_EMAIL') == 'On'
+send_actual_email = os.getenv('SENDEMAIL') == 'On'
 
 # Create routes
 @app.route('/notify', methods=["POST"])
@@ -37,6 +37,7 @@ def post_notify():
 
             client_id = request.form.get("client_id")
             client_secret = request.form.get("client_secret")
+
 
             auth = authenticate(client_id, client_secret)
 
@@ -61,11 +62,14 @@ def post_notify():
 
             if not "clientId" in data:
                 return jsonify({'success': False, 'details': f'Unauthorized to use this service.'}), 401
+
+            isAdmin = data['isAdmin']
+            isEmployee = data['isEmployee']
         get_telemetry('notifications_security_end')
 
         username = data["clientId"] if security_mode == 'Centralized' else client_id
 
-        if send_email:
+        if send_actual_email:
             send_email(sender, email_address, subject, body)
 
         query = f"""INSERT INTO "notification" ("sender", "recipient", "subject", "body", "time", "username") 

@@ -85,7 +85,7 @@ def run_bookings_flow(potential_bookings):
 
         id_movie_time = data["id_movie_time"]
         id_seat_type = data["id_seat_type"]
-        requested_seats = 2 # Ricardo randomize
+        requested_seats = random.randint(1, 4)
 
         print(f" Cycle #{i}")
 
@@ -134,9 +134,6 @@ def run_payments_flow(actual_bookings):
         r = requests.post(url, data = body, headers = header)
         print_response(url, r)
         data = json.loads(r.text)
-
-        #if "success" not in data:
-        #    actual_bookings.append(data["id_booking"])
         
         get_telemetry('payments_flow_end')
 
@@ -224,7 +221,6 @@ def authenticate(client_id, client_secret):
         return False
 
 def set_up(print_telemetry, user_id, user_password):
-    print("Setting up experiment")    
     global telemetry, client_id, client_secret, header
 
     telemetry = print_telemetry
@@ -235,9 +231,8 @@ def set_up(print_telemetry, user_id, user_password):
 
     header = {'Authorization': f'Bearer {token}'}
 
-def happy_flow():
-    print("Running '*happy_flow*'")
-    cycles = 5
+def bulk_flow(cycles):
+    print("Running '*bulk_flow*'")
 
     set_up(True, 'cinemaadmin', '@dm1nP@$$w0rd')
 
@@ -251,17 +246,14 @@ def happy_flow():
 
     get_telemetry('test_end')
 
-    copy_logs()
-
-def single_flow():
+def single_flow(cycles):
     print("Running '*single_flow*'")
-    cycles = 5
 
     for i in range(cycles):
 
         set_up(True, 'cinemaadmin', '@dm1nP@$$w0rd')
 
-        get_telemetry('test_start')
+        get_telemetry('test_start')    
 
         run_movies_flow(1)
         potential_bookings = run_cinema_catalog_flow(1)
@@ -269,14 +261,42 @@ def single_flow():
         run_payments_flow(actual_bookings)
         run_reports_flow(1)
 
-        get_telemetry('test_end')
+        get_telemetry('test_end')  
 
-    copy_logs()    
+def mixed_credentials_flow(cycles):
+    print("Running '*mixed_credentials_flow*'")
+
+    print("Logging as 'Cinema Admin'")
+    set_up(True, 'cinemaadmin', '@dm1nP@$$w0rd')
+
+    for i in range(cycles):
+
+        get_telemetry('test_start')
+
+        run_movies_flow(1)
+        run_reports_flow(1)
+
+        print("Logging as 'Cinema Employee'")
+        set_up(True, 'cinemaemployee', '3mpl0y33P@$$w0rd')
+
+        run_movies_flow(1)
+        run_reports_flow(1)
+
+        print("Logging as 'Cinema Customer'")
+        set_up(True, 'cinemacustomer', 'cu$t0m3rP@$$w0rd')
+
+        run_movies_flow(1)
+        run_reports_flow(1)
+
+        get_telemetry('test_end')  
 
 def main():
     
-    happy_flow()
-    single_flow()
+    print(f'*** Date & Time: {datetime.now().strftime("%Y-%m-%d %H.%M.%S")} ***')
+    bulk_flow(5)
+    single_flow(5)
+    mixed_credentials_flow(5)
+    copy_logs()  
 
 if __name__ == "__main__":
     main()

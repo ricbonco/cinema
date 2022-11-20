@@ -52,6 +52,13 @@ def get_payments():
 
             if not "clientId" in data:
                 return jsonify({'success': False, 'details': f'Unauthorized to use this service.'}), 401
+
+            isAdmin = data['isAdmin']
+            isEmployee = data['isEmployee']
+
+        if not isAdmin:
+            return jsonify({'success': False, 'details': f'Unauthorized to use this service. Only admins can access this service.'}), 401
+
         get_telemetry('payments_security_end')
 
         query = """SELECT p.id AS id_payments, p.id_booking, p.approved, p.last_digits, p.time, p.username
@@ -115,6 +122,13 @@ def get_notifications():
 
             if not "clientId" in data:
                 return jsonify({'success': False, 'details': f'Unauthorized to use this service.'}), 401
+
+            isAdmin = data['isAdmin']
+            isEmployee = data['isEmployee']
+
+        if not isAdmin and not isEmployee:
+            return jsonify({'success': False, 'details': f'Unauthorized to use this service. Only admins can access this service.'}), 401
+
         get_telemetry('notifications_security_end')
 
         query = """SELECT n.id AS id_notification, n.sender, n.recipient, n.subject, n.body, n.time, n.username
