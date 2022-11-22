@@ -296,9 +296,9 @@ def mixed_credentials_flow(cycles):
 def main():
     
     print(f'*** Date & Time: {datetime.now().strftime("%Y-%m-%d %H.%M.%S")} ***')
-    bulk_flow(1000)
-    single_flow(1000)
-    mixed_credentials_flow(1000)
+    bulk_flow(5000)
+    single_flow(5000)
+    mixed_credentials_flow(5000)
     copy_logs()  
 
 if __name__ == "__main__":

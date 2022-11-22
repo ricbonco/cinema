@@ -3,21 +3,22 @@ from datetime import datetime
 import numpy as np
 import sys, os
 
-df = pd.DataFrame(columns = ['Operation', 'Min', 'Max', 'Mean', 'Std', 'Var', 'CoV'])
 # Create a Pandas Excel writer using XlsxWriter as the engine.
 writer = pd.ExcelWriter('Summary.xlsx', engine='xlsxwriter')
 
-if len(sys.argv) == 2:
-    directory = sys.argv[1] 
-else:
-    directory = os.getcwd()
+#if len(sys.argv) == 3:
+directory = sys.argv[1] 
+#N = int(sys.argv[2])
+N = 10
+#else:
+#    directory = os.getcwd()
 
 files = os.listdir(directory)
 files_to_process = [f'{directory}/{f}' for f in files if os.path.isfile(directory+'/'+f) and ".xlsx" in f] #Filtering only the files.
 # Ricardo print(files_to_process)
 
 for file in files_to_process:
-
+    df = pd.DataFrame(columns = ['Operation', 'Min', 'Max', 'Mean', 'Std', 'Variance', 'CoV'])
     excel_data_df = pd.read_excel(file, sheet_name='Sheet1')
 
     operations_list = list(dict.fromkeys(excel_data_df['Operation'].tolist()))
@@ -51,14 +52,26 @@ for file in files_to_process:
         df_duration['new'] = df_duration['Duration'].values.astype(np.int64)
         duration_set = df_duration['new']
 
+        duration_set_list = duration_set.tolist()
+        duration_set_list.sort()
+
+        del duration_set_list[:N]
+        del duration_set_list[-N:]
+
+        duration_set = pd.Series(duration_set_list)
+
         minimum = pd.to_timedelta(np.min(duration_set))
         maximum = pd.to_timedelta(np.max(duration_set))
         average = pd.to_timedelta(np.mean(duration_set))
         std = pd.to_timedelta(np.std(duration_set))
-        variance = pd.to_timedelta(duration_set.var())
+        #minimum = (np.min(duration_set))
+        #maximum = (np.max(duration_set))
+        #average = (np.mean(duration_set))
+        #std = (np.std(duration_set))
+        variance = duration_set.var(ddof=0)
         coefficient_of_variance = std / average
 
-        df = df.append({'Operation' : measurement, 'Min' : minimum, 'Max' : maximum, 'Mean' : average, 'Std': std, 'Var' : variance, 'CoV': coefficient_of_variance},
+        df = df.append({'Operation' : measurement, 'Min' : minimum, 'Max' : maximum, 'Mean' : average, 'Std': std, 'Variance' : variance, 'CoV': coefficient_of_variance},
             ignore_index = True)
 
         sheet = file.split("/")[-1].replace(".xlsx", "")
