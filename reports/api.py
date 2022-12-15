@@ -135,7 +135,7 @@ def get_notifications():
 
         if not isAdmin and not isEmployee:
             get_telemetry('notifications_security_end')
-            return jsonify({'success': False, 'details': f'Unauthorized to use this service. Only admins can access this service.'}), 401
+            return jsonify({'success': False, 'details': f'Unauthorized to use this service. Only admins and employees can access this service.'}), 401
 
         get_telemetry('notifications_security_end')
 
