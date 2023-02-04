@@ -269,12 +269,14 @@ def single_flow(cycles):
 def mixed_credentials_flow(cycles):
     print("Running '*mixed_credentials_flow*'")
 
-    print("Logging as 'Cinema Admin'")
     set_up(True, 'cinemaadmin', '@dm1nP@$$w0rd')
 
     for i in range(cycles):
 
         get_telemetry('test_start')
+
+        print("Logging as 'Cinema Admin'")
+        set_up(True, 'cinemaadmin', '@dm1nP@$$w0rd')
 
         run_movies_flow(1)
         run_reports_flow(1)
@@ -296,9 +298,9 @@ def mixed_credentials_flow(cycles):
 def main():
     
     print(f'*** Date & Time: {datetime.now().strftime("%Y-%m-%d %H.%M.%S")} ***')
-    bulk_flow(100)
-    single_flow(100)
-    mixed_credentials_flow(100)
+    bulk_flow(10)
+    single_flow(10)
+    mixed_credentials_flow(10)
     copy_logs()  
 
 if __name__ == "__main__":
