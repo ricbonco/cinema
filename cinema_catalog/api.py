@@ -45,11 +45,14 @@ def get_venues():
             url = "http://security-service/verify"
             r = requests.post(url, headers = header)
 
+            data = json.loads(r.text)
+            if "details" in data and data["details"] == "Token has expired":
+                get_telemetry('movies_security_end')
+                return jsonify({'success': False, 'details': f'Token has expired'}), 401
+
             if r.status_code != 200:
                 get_telemetry('venues_security_end')
                 return jsonify({'success': False, 'details': f'Error while contacting security service. Status code: {r.status_code}'})
-
-            data = json.loads(r.text)
 
             if not "clientId" in data:
                 get_telemetry('venues_security_end')
@@ -115,11 +118,14 @@ def get_movies_per_cinema():
             url = "http://security-service/verify"
             r = requests.post(url, headers = header)
 
+            data = json.loads(r.text)
+            if "details" in data and data["details"] == "Token has expired":
+                get_telemetry('movies_security_end')
+                return jsonify({'success': False, 'details': f'Token has expired'}), 401
+
             if r.status_code != 200:
                 get_telemetry('movies_cinema_security_end')
                 return jsonify({'success': False, 'details': f'Error while contacting security service. Status code: {r.status_code}'})
-
-            data = json.loads(r.text)
 
             if not "clientId" in data:
                 get_telemetry('movies_cinema_security_end')
@@ -191,11 +197,14 @@ def get_movie_times_per_cinema():
             url = "http://security-service/verify"
             r = requests.post(url, headers = header)
 
+            data = json.loads(r.text)
+            if "details" in data and data["details"] == "Token has expired":
+                get_telemetry('movies_security_end')
+                return jsonify({'success': False, 'details': f'Token has expired'}), 401
+
             if r.status_code != 200:
                 get_telemetry('movie_times_cinema_security_end')
                 return jsonify({'success': False, 'details': f'Error while contacting security service. Status code: {r.status_code}'})
-
-            data = json.loads(r.text)
 
             if not "clientId" in data:
                 get_telemetry('movie_times_cinema_security_end')
@@ -269,11 +278,14 @@ def get_movie_seats_per_venue_and_times():
             url = "http://security-service/verify"
             r = requests.post(url, headers = header)
 
+            data = json.loads(r.text)
+            if "details" in data and data["details"] == "Token has expired":
+                get_telemetry('movies_security_end')
+                return jsonify({'success': False, 'details': f'Token has expired'}), 401
+
             if r.status_code != 200:
                 get_telemetry('movie_seats_venue_times_security_end')
                 return jsonify({'success': False, 'details': f'Error while contacting security service. Status code: {r.status_code}'})
-
-            data = json.loads(r.text)
 
             if not "clientId" in data:
                 get_telemetry('movie_seats_venue_times_security_end')
