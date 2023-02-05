@@ -29,7 +29,8 @@ for file in files_to_process:
     measurements_list = list(dict.fromkeys(measurements_list))
 
     for measurement in measurements_list:
-
+        
+        print(f"Processing {measurement}")    
         # Getting start and end times
         df_start = excel_data_df.loc[excel_data_df['Operation'] == f"{measurement}_start"]
         df_end = excel_data_df.loc[excel_data_df['Operation'] == f"{measurement}_end"]

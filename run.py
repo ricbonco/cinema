@@ -300,6 +300,9 @@ def mixed_credentials_flow(cycles):
 
         get_telemetry('test_start')
 
+        print("Logging as 'Cinema Admin'")
+        set_up(True, 'cinemaadmin', '@dm1nP@$$w0rd')
+
         run_movies_flow(1)
         run_reports_flow(1)
 

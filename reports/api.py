@@ -69,7 +69,7 @@ def get_payments():
         get_telemetry('payments_security_end')
 
         query = """SELECT p.id AS id_payments, p.id_booking, p.approved, p.last_digits, p.time, p.username
-                   FROM payment AS p"""
+                   FROM payment AS p LIMIT 5"""
         
         dbquery = cur.execute(query)
         row_headers=[x[0] for x in cur.description] 
@@ -146,7 +146,7 @@ def get_notifications():
         get_telemetry('notifications_security_end')
 
         query = """SELECT n.id AS id_notification, n.sender, n.recipient, n.subject, n.body, n.time, n.username
-                   FROM notification AS n"""
+                   FROM notification AS n LIMIT 5"""
         
         dbquery = cur.execute(query)
         row_headers=[x[0] for x in cur.description] 
