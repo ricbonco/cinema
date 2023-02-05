@@ -15,6 +15,8 @@ def run_movies_flow(cycles):
         r = requests.get(url, data = body, headers = header)
         print_response(url, r)
 
+        reauthenticate_if_expired(r)
+
         get_telemetry('movies_flow_end')
 
 def run_cinema_catalog_flow(cycles):    
@@ -36,6 +38,8 @@ def run_cinema_catalog_flow(cycles):
         index = random.randint(0, venues_count-1)
         id_venue = data["venues"][index]["id_venue"]
 
+        reauthenticate_if_expired(r)
+
         # Calling movies_cinema
         print("  Running 'movies_cinema' service")  
         url = "http://localhost:8082/movies_cinema"
@@ -46,6 +50,8 @@ def run_cinema_catalog_flow(cycles):
         movies_by_venues_count = len(data["movies_by_venues"])
         index = random.randint(0, movies_by_venues_count-1)
         id_movie_venue = data["movies_by_venues"][index]["id_movie_venue"]
+
+        reauthenticate_if_expired(r)
         
         # Calling movie_times_cinema
         print("  Running 'movie_times_cinema' service")  
@@ -57,6 +63,8 @@ def run_cinema_catalog_flow(cycles):
         movie_times_cinema_count = len(data["movie_times_cinema"])
         index = random.randint(0, movie_times_cinema_count-1)
         id_movie_time = data["movie_times_cinema"][index]["id_movies_times"]
+
+        reauthenticate_if_expired(r)
 
         # Calling movie_seats_venue_times
         print("  Running 'movie_seats_venue_times' service")  
@@ -70,6 +78,8 @@ def run_cinema_catalog_flow(cycles):
         id_seat_type = data["movie_seats_venue_times"][index]["id_seat_type"]
         
         potential_bookings.append({'id_movie_time' : id_movie_time, 'id_seat_type': id_seat_type})
+
+        reauthenticate_if_expired(r)
 
         get_telemetry('cinema_catalog_flow_end')
 
@@ -100,6 +110,8 @@ def run_bookings_flow(potential_bookings):
 
         if "success" not in data:
             actual_bookings.append(data["id_booking"])
+
+        reauthenticate_if_expired(r)    
         
         get_telemetry('bookings_flow_end')
 
@@ -121,6 +133,8 @@ def run_payments_flow(actual_bookings):
         r = requests.get(url, data = body, headers = header)
         print_response(url, r)
 
+        reauthenticate_if_expired(r)
+
         # Calling pay
         print("  Running 'pay' service")  
         url = "http://localhost:8084/pay"
@@ -133,7 +147,8 @@ def run_payments_flow(actual_bookings):
                 'card_verification_value' : card_verification_value}
         r = requests.post(url, data = body, headers = header)
         print_response(url, r)
-        data = json.loads(r.text)
+
+        reauthenticate_if_expired(r)
         
         get_telemetry('payments_flow_end')
 
@@ -151,12 +166,16 @@ def run_reports_flow(cycles):
         r = requests.get(url, data = body, headers = header)
         print_response(url, r)
 
+        reauthenticate_if_expired(r)
+
         # Calling notifications
         print("  Running 'notifications' service")  
         url = "http://localhost:8086/notifications"
         body = {'client_id' : client_id, 'client_secret' : client_secret}
         r = requests.get(url, data = body, headers = header)
         print_response(url, r)
+
+        reauthenticate_if_expired(r)
 
         get_telemetry('reports_flow_end')        
 
@@ -222,6 +241,12 @@ def authenticate(client_id, client_secret):
     else:
         print(f"Error when authenticating '{client_id}'")
         return False
+
+def reauthenticate_if_expired(response):
+    data = json.loads(response.text)
+    
+    if ("details" in data and data["details"] == "Token has expired"):
+        set_up(telemetry, client_id, client_secret)
 
 def set_up(print_telemetry, user_id, user_password):
     global telemetry, client_id, client_secret, header
@@ -295,12 +320,27 @@ def mixed_credentials_flow(cycles):
 
         get_telemetry('test_end')  
 
+def expired_token_flow(cycles):
+    print("Running '*expired_token_flow*'")
+
+    set_up(True, 'cinemaadmin', '@dm1nP@$$w0rd')
+
+    for i in range(cycles):
+
+        get_telemetry('test_start')
+
+        run_movies_flow(1)
+        run_reports_flow(1)
+
+        get_telemetry('test_end')
+
 def main():
     
     print(f'*** Date & Time: {datetime.now().strftime("%Y-%m-%d %H.%M.%S")} ***')
-    bulk_flow(10)
-    single_flow(10)
-    mixed_credentials_flow(10)
+    bulk_flow(100)
+    single_flow(100)
+    mixed_credentials_flow(100)
+    expired_token_flow(0)
     copy_logs()  
 
 if __name__ == "__main__":

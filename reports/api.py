@@ -46,11 +46,14 @@ def get_payments():
             url = "http://security-service/verify"
             r = requests.post(url, headers = header)
 
+            data = json.loads(r.text)
+            if "details" in data and data["details"] == "Token has expired":
+                get_telemetry('movies_security_end')
+                return jsonify({'success': False, 'details': f'Token has expired'}), 401
+
             if r.status_code != 200:
                 get_telemetry('payments_security_end')
                 return jsonify({'success': False, 'details': f'Error while contacting security service. Status code: {r.status_code}'})
-
-            data = json.loads(r.text)
 
             if not "clientId" in data:
                 get_telemetry('payments_security_end')
@@ -61,7 +64,7 @@ def get_payments():
 
         if not isAdmin:
             get_telemetry('payments_security_end')
-            return jsonify({'success': False, 'details': f'Unauthorized to use this service. Only admins can access this service.'}), 401
+            return jsonify({'success': False, 'details': f'Unauthorized to use this service. Only admins can access this service.'}), 403
 
         get_telemetry('payments_security_end')
 
@@ -120,11 +123,14 @@ def get_notifications():
             url = "http://security-service/verify"
             r = requests.post(url, headers = header)
 
+            data = json.loads(r.text)
+            if "details" in data and data["details"] == "Token has expired":
+                get_telemetry('movies_security_end')
+                return jsonify({'success': False, 'details': f'Token has expired'}), 401
+
             if r.status_code != 200:
                 get_telemetry('notifications_security_end')
                 return jsonify({'success': False, 'details': f'Error while contacting security service. Status code: {r.status_code}'})
-
-            data = json.loads(r.text)
 
             if not "clientId" in data:
                 get_telemetry('notifications_security_end')
@@ -135,7 +141,7 @@ def get_notifications():
 
         if not isAdmin and not isEmployee:
             get_telemetry('notifications_security_end')
-            return jsonify({'success': False, 'details': f'Unauthorized to use this service. Only admins and employees can access this service.'}), 401
+            return jsonify({'success': False, 'details': f'Unauthorized to use this service. Only admins and employees can access this service.'}), 403
 
         get_telemetry('notifications_security_end')
 

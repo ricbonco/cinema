@@ -49,11 +49,14 @@ def get_subtotal():
             url = "http://security-service/verify"
             r = requests.post(url, headers = header)
 
+            data = json.loads(r.text)
+            if "details" in data and data["details"] == "Token has expired":
+                get_telemetry('movies_security_end')
+                return jsonify({'success': False, 'details': f'Token has expired'}), 401
+
             if r.status_code != 200:
                 get_telemetry('subtotal_security_end')
                 return jsonify({'success': False, 'details': f'Error while contacting security service. Status code: {r.status_code}'})
-
-            data = json.loads(r.text)
 
             if not "clientId" in data:
                 get_telemetry('subtotal_security_end')
@@ -126,11 +129,14 @@ def make_payment():
             url = "http://security-service/verify"
             r = requests.post(url, headers = header)
 
+            data = json.loads(r.text)
+            if "details" in data and data["details"] == "Token has expired":
+                get_telemetry('movies_security_end')
+                return jsonify({'success': False, 'details': f'Token has expired'}), 401
+
             if r.status_code != 200:
                 get_telemetry('pay_security_end')
                 return jsonify({'success': False, 'details': f'Error while contacting security service. Status code: {r.status_code}'})
-
-            data = json.loads(r.text)
 
             if not "clientId" in data:
                 get_telemetry('pay_security_end')

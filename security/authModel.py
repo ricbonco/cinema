@@ -76,7 +76,10 @@ def verify(token):
             return decoded
     except (Exception) as error:
         print(error, flush=True)
-        return {"success": False}
+        if str(error) == "Signature has expired":
+            return {"success": False, "details": "Token has expired"}
+        else:    
+            return {"success": False}
 
 def create(clientId, clientSecret, isAdmin, isEmployee):
     
